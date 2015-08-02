@@ -31,7 +31,7 @@ func NewJar(r *http.Request) Jar {
 func (j *Jar) LoadVars() {
 
 	if j.PostVars != nil {
-		panic("Jar.Load can be called only once")
+		panic("Jar.LoadVars can be called only once per request")
 	} else {
 		j.PostVars = make(map[string]string)
 		j.QueryVars = make(map[string]string)

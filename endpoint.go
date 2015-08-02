@@ -15,47 +15,49 @@ import (
 )
 
 type endPoint struct {
-	caller     MethodInvoker
-	info       Fixture
+	exec       MethodInvoker
+	config     Fixture
 	httpMethod string
 
-	isStdHttpHandler bool
-	needsJarInput    bool
+	stdHandler bool
+	jarInput   bool
 
-	muxUrl  string
-	muxVars []string
-	modules []func(http.Handler) http.Handler
-	stash   cache.Cacher
+	urlWithVersion string
+	urlWoVersion   string
+	muxVars        []string
+	modules        []func(http.Handler) http.Handler
+	stash          cache.Cacher
 }
 
-func NewEndPoint(inv MethodInvoker, f Fixture, matchUrl string, httpMethod string, mods map[string]func(http.Handler) http.Handler,
+func NewEndPoint(inv MethodInvoker, f Fixture, httpMethod string, mods map[string]func(http.Handler) http.Handler,
 	caches map[string]cache.Cacher) endPoint {
 
 	out := endPoint{
-		caller:           inv,
-		info:             f,
-		isStdHttpHandler: false,
-		needsJarInput:    false,
-		muxUrl:           matchUrl,
-		muxVars:          extractRouteVars(matchUrl),
-		httpMethod:       httpMethod,
-		modules:          make([]func(http.Handler) http.Handler, 0),
-		stash:            nil,
+		exec:           inv,
+		config:         f,
+		stdHandler:     false,
+		jarInput:       false,
+		urlWithVersion: cleanUrl(f.Prefix, "v"+f.Version, f.Root, f.Url),
+		urlWoVersion:   cleanUrl(f.Prefix, f.Root, f.Url),
+		muxVars:        extractRouteVars(f.Url),
+		httpMethod:     httpMethod,
+		modules:        make([]func(http.Handler) http.Handler, 0),
+		stash:          nil,
 	}
 
+	// Perform all validations, unless it is a mock stub
 	if f.Stub == "" {
-		out.isStdHttpHandler = out.signatureMatchesDefaultHttpHandler()
-		out.needsJarInput = out.needsVariableJar()
+		out.stdHandler = out.signatureMatchesDefaultHttpHandler()
+		out.jarInput = out.needsJarInput()
 
 		out.validateMuxVarsMatchFuncInputs()
 		out.validateFuncInputsAreOfRightType()
 		out.validateFuncOutputsAreCorrect()
 	}
 
-	// Tag modules used by this endpoint
+	// Filter out relevant modules for later use
 	if mods != nil && f.Modules != "" {
 		names := strings.Split(f.Modules, ",")
-		out.modules = make([]func(http.Handler) http.Handler, 0)
 		for _, name := range names {
 			name = strings.TrimSpace(name)
 			fn, found := mods[name]
@@ -66,57 +68,64 @@ func NewEndPoint(inv MethodInvoker, f Fixture, matchUrl string, httpMethod strin
 		}
 	}
 
-	// Tag the cache
-	if c, ok := caches[f.Cache]; ok {
-		out.stash = c
-	} else if f.Cache != "" {
-		panic("Cache not found: " + f.Cache + " for " + matchUrl)
+	// Figure out which cache store to use, unless it is a mock stub
+	if f.Stub == "" {
+		if c, ok := caches[f.Cache]; ok {
+			out.stash = c
+		} else if f.Cache != "" {
+			if out.config.Version == "" {
+				panik.Do("Cache provider %s is missing for %s", f.Cache, out.urlWoVersion)
+			} else {
+				panik.Do("Cache provider %s is missing for %s", f.Cache, out.urlWithVersion)
+			}
+
+		}
 	}
 
 	return out
 }
 
 func (me *endPoint) signatureMatchesDefaultHttpHandler() bool {
-	return me.caller.outCount == 0 &&
-		me.caller.inpCount == 2 &&
-		me.caller.inpParams[0] == "i:net/http.ResponseWriter" &&
-		me.caller.inpParams[1] == "*st:net/http.Request"
+	return me.exec.outCount == 0 &&
+		me.exec.inpCount == 2 &&
+		me.exec.inpParams[0] == "i:net/http.ResponseWriter" &&
+		me.exec.inpParams[1] == "*st:net/http.Request"
 }
 
-func (me *endPoint) needsVariableJar() bool {
+func (me *endPoint) needsJarInput() bool {
 	// needs jar input as the last parameter
-	for i := 0; i < len(me.caller.inpParams)-1; i++ {
-		if me.caller.inpParams[i] == "st:github.com/thejackrabbit/aqua.Jar" {
-			panic("Jar parameter should be the last one: " + me.caller.name)
+	for i := 0; i < len(me.exec.inpParams)-1; i++ {
+		if me.exec.inpParams[i] == "st:github.com/thejackrabbit/aqua.Jar" {
+			panic("Jar parameter should be the last one: " + me.exec.name)
 		}
 	}
-	return me.caller.inpCount > 0 && me.caller.inpParams[me.caller.inpCount-1] == "st:github.com/thejackrabbit/aqua.Jar"
+	return me.exec.inpCount > 0 && me.exec.inpParams[me.exec.inpCount-1] == "st:github.com/thejackrabbit/aqua.Jar"
 }
 
 func (me *endPoint) validateMuxVarsMatchFuncInputs() {
 	// for non-standard http handlers, the mux vars count should match
 	// the count of inputs to the user's method
-	if !me.isStdHttpHandler {
-		inputs := me.caller.inpCount
-		if me.needsJarInput {
+	if !me.stdHandler {
+		inputs := me.exec.inpCount
+		if me.jarInput {
 			inputs += -1
 		}
 		if len(me.muxVars) != inputs {
 			panic(fmt.Sprintf("%s has %d inputs, but the func (%s) has %d",
-				me.muxUrl, len(me.muxVars), me.caller.name, inputs))
+				me.urlWithVersion, len(me.muxVars), me.exec.name, inputs))
 		}
 	}
 }
 
 func (me *endPoint) validateFuncInputsAreOfRightType() {
-	if !me.isStdHttpHandler {
-		for _, s := range me.caller.inpParams {
+	if !me.stdHandler {
+		for _, s := range me.exec.inpParams {
 			switch s {
 			case "st:github.com/thejackrabbit/aqua.Jar":
 			case "int":
 			case "string":
 			default:
-				panic("Func input params should be 'int' or 'string'. Observed: " + s + " in: " + me.caller.name)
+				panic("Func input params should be 'int' or 'string'. Observed: " + s + " in " + me.exec.name)
 			}
 		}
 	}
@@ -130,77 +139,68 @@ func (me *endPoint) validateFuncOutputsAreCorrect() {
 	accepts["st:github.com/thejackrabbit/aqua.Sac"] = true
 	accepts["*st:github.com/thejackrabbit/aqua.Sac"] = true
 
-	if !me.isStdHttpHandler {
-		switch me.caller.outCount {
+	if !me.stdHandler {
+		switch me.exec.outCount {
 		case 1:
-			_, found := accepts[me.caller.outParams[0]]
-			if !found && !strings.HasPrefix(me.caller.outParams[0], "st:") {
-				fmt.Println(me.caller.outParams[0])
-				panic("Incorrect return type found in: " + me.caller.name)
+			_, found := accepts[me.exec.outParams[0]]
+			if !found && !strings.HasPrefix(me.exec.outParams[0], "st:") {
+				fmt.Println(me.exec.outParams[0])
+				panic("Incorrect return type found in: " + me.exec.name)
 			}
 		case 2:
-			if me.caller.outParams[0] != "int" {
-				panic("When a func returns two params, the first must be an int (http status code) : " + me.caller.name)
+			if me.exec.outParams[0] != "int" {
+				panic("When a func returns two params, the first must be an int (http status code) : " + me.exec.name)
 			}
-			_, found := accepts[me.caller.outParams[1]]
-			if !found && !strings.HasPrefix(me.caller.outParams[1], "st:") {
-				panic("Incorrect return type for second return param found in: " + me.caller.name)
+			_, found := accepts[me.exec.outParams[1]]
+			if !found && !strings.HasPrefix(me.exec.outParams[1], "st:") {
+				panic("Incorrect return type for second return param found in: " + me.exec.name)
 			}
 		default:
-			panic("Incorrect number of returns for Func: " + me.caller.name)
+			panic("Incorrect number of returns for Func: " + me.exec.name)
 		}
 	}
 }
 
-// func middleman(next http.Handler) http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		fmt.Println("In the middle >>>>")
-// 		next.ServeHTTP(w, r)
-// 		fmt.Println("And leaving middle <<<<")
-// 	})
-// }
-
 func (me *endPoint) setupMuxHandlers(mux *mux.Router) {
-
-	fn := handleIncoming(me)
 
 	m := interpose.New()
 	for i, _ := range me.modules {
 		m.Use(me.modules[i])
 		//fmt.Println("using module:", me.modules[i], reflect.TypeOf(me.modules[i]))
 	}
+	fn := handleIncoming(me)
 	m.UseHandler(http.HandlerFunc(fn))
 
-	if me.info.Version == "*" {
-		mux.Handle(me.muxUrl, m).Methods(me.httpMethod)
-	} else {
-		urlWithVersion := cleanUrl(me.info.Prefix, "v"+me.info.Version, me.muxUrl)
-		urlWithoutVersion := cleanUrl(me.info.Prefix, me.muxUrl)
+	if me.config.Version == "" {
+		// url without version
+		mux.Handle(me.urlWoVersion, m).Methods(me.httpMethod)
 
+		// TODO: should we add content type application+json here?
+	} else {
 		// versioned url
-		mux.Handle(urlWithVersion, m).Methods(me.httpMethod)
+		mux.Handle(me.urlWithVersion, m).Methods(me.httpMethod)
 
 		// content type (style1)
-		header1 := fmt.Sprintf("application/%s-v%s+json", me.info.Vendor, me.info.Version)
-		mux.Handle(urlWithoutVersion, m).Methods(me.httpMethod).Headers("Accept", header1)
+		header1 := fmt.Sprintf("application/%s-v%s+json", me.config.Vendor, me.config.Version)
+		mux.Handle(me.urlWoVersion, m).Methods(me.httpMethod).Headers("Accept", header1)
 
 		// content type (style2)
-		header2 := fmt.Sprintf("application/%s+json;version=%s", me.info.Vendor, me.info.Version)
-		mux.Handle(urlWithoutVersion, m).Methods(me.httpMethod).Headers("Accept", header2)
+		header2 := fmt.Sprintf("application/%s+json;version=%s", me.config.Vendor, me.config.Version)
+		mux.Handle(me.urlWoVersion, m).Methods(me.httpMethod).Headers("Accept", header2)
 	}
 }
 
 func handleIncoming(e *endPoint) func(http.ResponseWriter, *http.Request) {
 
 	// return stub
-	if e.info.Stub != "" {
+	if e.config.Stub != "" {
 		return func(w http.ResponseWriter, r *http.Request) {
-			d, err := getContent(e.info.Stub)
+			d, err := getContent(e.config.Stub)
 			if err == nil {
 				fmt.Fprintf(w, "%s", d)
 			} else {
 				w.WriteHeader(400)
-				fmt.Fprintf(w, "{ message: \"%s\"}", "Stub path not found")
+				fmt.Fprintf(w, "{ message: \"%s\"}", "Error reading stub content "+e.config.Stub)
 			}
 		}
 	}
@@ -217,52 +217,48 @@ func handleIncoming(e *endPoint) func(http.ResponseWriter, *http.Request) {
 		var val []byte
 		var err error
 
-		if e.info.Ttl != "" {
-			ttl, err = time.ParseDuration(e.info.Ttl)
+		if e.config.Ttl != "" {
+			ttl, err = time.ParseDuration(e.config.Ttl)
 			panik.On(err)
 		}
 		useCache = r.Method == "GET" && ttl > 0 && e.stash != nil
 
 		muxVals := mux.Vars(r)
 		params := make([]string, len(e.muxVars))
-		for i, v := range e.muxVars {
-			params[i] = muxVals[v]
+		for i, k := range e.muxVars {
+			params[i] = muxVals[k]
 		}
 
-		if e.isStdHttpHandler {
+		if e.stdHandler {
 			//TODO: caching of standard handler
-			e.caller.Do([]reflect.Value{reflect.ValueOf(w), reflect.ValueOf(r)})
+			e.exec.Do([]reflect.Value{reflect.ValueOf(w), reflect.ValueOf(r)})
 		} else {
-			ref := convertToType(params, e.caller.inpParams)
-			if e.needsJarInput {
+			ref := convertToType(params, e.exec.inpParams)
+			if e.jarInput {
 				ref = append(ref, reflect.ValueOf(NewJar(r)))
 			}
 
 			if useCache {
 				val, err = e.stash.Get(r.RequestURI)
 				if err == nil {
-					// fmt.Print(".")
-					out = decomposeCachedValues(val, e.caller.outParams)
+					out = decomposeCachedValues(val, e.exec.outParams)
 				} else {
-					out = e.caller.Do(ref)
-					if len(out) == 2 && e.caller.outParams[0] == "int" {
+					out = e.exec.Do(ref)
+					if len(out) == 2 && e.exec.outParams[0] == "int" {
 						code := out[0].Int()
 						if code < 200 || code > 299 {
 							useCache = false
 						}
 					}
 					if useCache {
-						bytes := prepareForCaching(out, e.caller.outParams)
+						bytes := prepareForCaching(out, e.exec.outParams)
 						e.stash.Set(r.RequestURI, bytes, ttl)
-						// fmt.Print(":", len(bytes), r.RequestURI)
 					}
-
 				}
 			} else {
-				out = e.caller.Do(ref)
-				// fmt.Print("!")
+				out = e.exec.Do(ref)
 			}
-			writeOutput(w, e.caller.outParams, out, e.info.Pretty)
+			writeOutput(w, e.exec.outParams, out, e.config.Pretty)
 		}
 	}
 }

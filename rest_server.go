@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/thejackrabbit/aero/cache"
+	"github.com/thejackrabbit/aero/panik"
 	"net/http"
 	"reflect"
 	"strings"
@@ -13,7 +14,7 @@ import (
 var defaults Fixture = Fixture{
 	Root:    "",
 	Url:     "",
-	Version: "*",
+	Version: "",
 	Pretty:  "false",
 	Vendor:  "vnd.api",
 	Modules: "",
@@ -29,6 +30,7 @@ type RestServer struct {
 	http.Server
 	Port   int
 	mux    *mux.Router
+	svcs   []interface{}
 	apis   map[string]endPoint
 	mods   map[string]func(http.Handler) http.Handler
 	stores map[string]cache.Cacher
@@ -39,6 +41,7 @@ func NewRestServer() RestServer {
 		Fixture: defaults,
 		Server:  http.Server{},
 		Port:    defaultPort,
+		svcs:    make([]interface{}, 0),
 		mux:     mux.NewRouter(),
 		apis:    make(map[string]endPoint),
 		mods:    make(map[string]func(http.Handler) http.Handler),
@@ -63,7 +66,82 @@ func (me *RestServer) AddCache(name string, c cache.Cacher) {
 }
 
 func (me *RestServer) AddService(svc interface{}) {
+	me.svcs = append(me.svcs, svc)
+}
 
+func (me *RestServer) loadAllEndpoints() {
+
+	for _, i := range me.svcs {
+		me.loadServiceEndpoints(i)
+	}
+}
+
+func (me *RestServer) loadServiceEndpoints(svc interface{}) {
+
+	// Validations
+	me.validateService(svc)
+
+	if !printed {
+		fmt.Println("Loading...")
+		printed = true
+	}
+
+	fixSvcTag := NewFixtureFromTag(svc, "RestService")
+
+	obj := reflect.ValueOf(svc).Elem()
+	fixSvcObj := obj.FieldByName("RestService").FieldByName("Fixture").Interface().(Fixture)
+
+	var fix Fixture
+	var method string
+
+	svcType := reflect.TypeOf(svc)
+	objType := svcType.Elem()
+
+	for i := 0; i < objType.NumField(); i++ {
+		field := objType.FieldByIndex([]int{i})
+		fixField := NewFixtureFromTag(svc, field.Name)
+		fix = resolveInOrder(fixField, fixSvcObj, fixSvcTag, me.Fixture)
+
+		// If root or url are missing then set it
+		if fix.Root == "" {
+			tmp := objType.Name()
+			if strings.HasSuffix(tmp, "Service") {
+				tmp = tmp[0 : len(tmp)-len("Service")]
+			}
+			fix.Root = toUrlCase(tmp)
+		}
+		if fix.Url == "" {
+			fix.Url = toUrlCase(field.Name)
+		}
+
+		method = getHttpMethod(field)
+		if method == "" {
+			// Skip non http method fields
+			continue
+		}
+
+		v := ""
+		if fix.Version != "" {
+			v = fix.Version
+		}
+		serviceId := cleanUrl(method, fix.Prefix, v, fix.Root, fix.Url)
+
+		if _, found := me.apis[serviceId]; found {
+			panik.Do("Cannot load same service again %s in %s", serviceId, svcType.String())
+		}
+
+		exec := NewMethodInvoker(svc, upFirstChar(field.Name))
+		if exec.exists || fix.Stub != "" {
+			ep := NewEndPoint(exec, fix, method, me.mods, me.stores)
+			ep.setupMuxHandlers(me.mux)
+			me.apis[serviceId] = ep
+			fmt.Printf("%s\n", serviceId)
+			//fmt.Println(fix)
+		}
+	}
+}
+
+func (me *RestServer) validateService(svc interface{}) {
 	svcType := reflect.TypeOf(svc)
 	code := getSymbolFromType(svcType)
 
@@ -77,65 +155,15 @@ func (me *RestServer) AddService(svc interface{}) {
 	if !ok || !rs.Anonymous || !rs.Type.ConvertibleTo(reflect.TypeOf(RestService{})) {
 		panic("RestServer.AddService() expects object that contains anonymous RestService field")
 	}
-
-	objType := svcType.Elem()
-	obj := reflect.ValueOf(svc).Elem()
-
-	fixSvcTag := NewFixtureFromTag(svc, "RestService")
-	fixSvc := obj.FieldByName("RestService").FieldByName("Fixture").Interface().(Fixture)
-
-	var fix Fixture
-	var method string
-
-	if !printed {
-		fmt.Println("Loading...")
-		printed = true
-	}
-
-	for i := 0; i < objType.NumField(); i++ {
-		field := objType.FieldByIndex([]int{i})
-
-		method = getHttpMethod(field)
-		if method == "" {
-			continue
-		}
-		fixFldTag := NewFixtureFromTag(svc, field.Name)
-		fix = resolveInOrder(fixFldTag, fixSvc, fixSvcTag, me.Fixture)
-
-		if fix.Root == "" {
-			tmp := objType.Name()
-			if strings.HasSuffix(tmp, "Service") {
-				tmp = tmp[0 : len(tmp)-len("Service")]
-			}
-			fix.Root = toUrlCase(tmp)
-		}
-		if fix.Url == "" {
-			fix.Url = toUrlCase(field.Name)
-		}
-
-		matchUrl := cleanUrl(fix.Root, fix.Url)
-		serviceId := getServiceId(method, fix.Prefix, fix.Version, matchUrl)
-
-		if _, found := me.apis[serviceId]; found {
-			panic("Cannot load service again: " + serviceId)
-		}
-
-		inv := NewMethodInvoker(svc, upFirstChar(field.Name))
-		if inv.exists || fix.Stub != "" {
-			ep := NewEndPoint(inv, fix, matchUrl, method, me.mods, me.stores)
-			ep.setupMuxHandlers(me.mux)
-			me.apis[serviceId] = ep
-			fmt.Printf("%s\n", serviceId)
-			//fmt.Println(fix)
-		}
-	}
 }
 
 func (me *RestServer) Run() {
+	me.loadAllEndpoints()
 	startup(me, me.Port)
 }
 
 func (me *RestServer) RunAsync() {
+	me.loadAllEndpoints()
 	go startup(me, me.Port)
 
 	// TODO: don't sleep, check for the server to come up, and panic if
@@ -143,6 +171,7 @@ func (me *RestServer) RunAsync() {
 	time.Sleep(time.Millisecond * 50)
 }
 
+// For backward compatibility
 func (me *RestServer) RunWith(port int, sync bool) {
 	me.Port = port
 	if sync {

@@ -14,7 +14,7 @@ func TestDefaultConfiguration(t *testing.T) {
 		Convey("Then its embedded Fixture should have proper default values", func() {
 			So(s.Url, ShouldBeEmpty)
 			So(s.Root, ShouldBeEmpty)
-			So(s.Version, ShouldEqual, "*")
+			So(s.Version, ShouldBeBlank)
 		})
 	})
 }
@@ -52,6 +52,7 @@ func TestSameUrlWithSameHttpMethods(t *testing.T) {
 			Convey("Then the program should panic", func() {
 				So(func() {
 					s.AddService(&AnyService{})
+					s.loadAllEndpoints()
 				}, ShouldPanic)
 			})
 		})
@@ -95,6 +96,7 @@ func TestAddMethodValidations(t *testing.T) {
 			Convey("Then there should be panic", func() {
 				So(func() {
 					s.AddService(svc)
+					s.loadAllEndpoints()
 				}, ShouldPanic)
 			})
 		})
@@ -114,6 +116,7 @@ func TestAddMethodValidations(t *testing.T) {
 				Convey("Then there should be panic", func() {
 					So(func() {
 						s.AddService(&obj)
+						s.loadAllEndpoints()
 					}, ShouldPanic)
 				})
 			})
@@ -128,6 +131,7 @@ func TestAddMethodValidations(t *testing.T) {
 				Convey("Then there should be panic", func() {
 					So(func() {
 						s.AddService(&obj)
+						s.loadAllEndpoints()
 					}, ShouldPanic)
 				})
 			})
@@ -166,39 +170,49 @@ func (me *UserServiceD) GetUser() string { return "" }
 func TestConfigurationHierarchy(t *testing.T) {
 
 	Convey("Given a RestServer", t, func() {
-		s := NewRestServer()
-		s.Version = "0.2"
 
 		Convey("Then the server config is inherited at Fixture", func() {
+			s := NewRestServer()
+			s.Version = "0.2"
 			u := UserServiceA{}
 			s.AddService(&u)
-			apiId := getServiceId("GET", "", "0.2", "/A/get-user")
+			s.loadAllEndpoints()
+			apiId := cleanUrl("GET", "", "0.2", "/A/get-user")
 			_, found := s.apis[apiId]
 			So(found, ShouldBeTrue)
 		})
 
 		Convey("Then the service tag overrides server config", func() {
+			s := NewRestServer()
+			s.Version = "0.2"
 			u := UserServiceB{}
 			s.AddService(&u)
-			apiId := getServiceId("GET", "", "0.3", "/B/get-user")
+			s.loadAllEndpoints()
+			apiId := cleanUrl("GET", "", "0.3", "/B/get-user")
 			_, found := s.apis[apiId]
 			So(found, ShouldBeTrue)
 		})
 
 		Convey("Then programmatically set service values override service tag", func() {
+			s := NewRestServer()
+			s.Version = "0.2"
 			u := UserServiceC{}
 			u.Version = "0.4"
 			s.AddService(&u)
-			apiId := getServiceId("GET", "", "0.4", "/C/get-user")
+			s.loadAllEndpoints()
+			apiId := cleanUrl("GET", "", "0.4", "/C/get-user")
 			_, found := s.apis[apiId]
 			So(found, ShouldBeTrue)
 		})
 
 		Convey("Then the Fixture tag overrides service values", func() {
+			s := NewRestServer()
+			s.Version = "0.2"
 			u := UserServiceD{}
 			u.Version = "0.4"
 			s.AddService(&u)
-			apiId := getServiceId("GET", "", "0.5", "/D/get-user")
+			s.loadAllEndpoints()
+			apiId := cleanUrl("GET", "", "0.5", "/D/get-user")
 			_, found := s.apis[apiId]
 			So(found, ShouldBeTrue)
 		})

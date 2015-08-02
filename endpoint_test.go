@@ -15,8 +15,8 @@ func (me *epMock) Handler1(w http.ResponseWriter, r *http.Request) {}
 func TestStandardHttpHandlerIsIdentifiedCorrectly(t *testing.T) {
 	Convey("Given an endpoint and a Service Controller", t, func() {
 		Convey("The standard http handler should be identified correctly", func() {
-			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Handler1"), Fixture{}, "/abc", "GET", nil, nil)
-			So(ep.isStdHttpHandler, ShouldBeTrue)
+			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Handler1"), Fixture{}, "GET", nil, nil)
+			So(ep.stdHandler, ShouldBeTrue)
 		})
 	})
 }
@@ -30,24 +30,24 @@ func (me *epMock) Jar5(j Jar, k Jar) string                    { return "" }
 func TestJarInputIsIdentifiedCorrectly(t *testing.T) {
 	Convey("Given an endpoint and a Service Controller", t, func() {
 		Convey("A standard http function should NOT be marked for Jar", func() {
-			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Jar1"), Fixture{}, "/abc/{d}/{e}", "GET", nil, nil)
-			So(ep.needsJarInput, ShouldBeFalse)
+			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Jar1"), Fixture{Url: "/abc/{d}/{e}"}, "GET", nil, nil) //"/abc/{d}/{e}",
+			So(ep.jarInput, ShouldBeFalse)
 		})
 		Convey("A function with one Jar input should be marked for Jar", func() {
-			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Jar2"), Fixture{}, "/abc", "GET", nil, nil)
-			So(ep.needsJarInput, ShouldBeTrue)
+			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Jar2"), Fixture{Url: "/abc"}, "GET", nil, nil) // "/abc",
+			So(ep.jarInput, ShouldBeTrue)
 		})
 		Convey("Jar input in the begining should not work", func() {
 			So(func() {
-				NewEndPoint(NewMethodInvoker(&epMock{}, "Jar3"), Fixture{}, "/abc/{d}", "GET", nil, nil)
+				NewEndPoint(NewMethodInvoker(&epMock{}, "Jar3"), Fixture{Url: "/abc/{d}"}, "GET", nil, nil) // "/abc/{d}",
 			}, ShouldPanic)
 			So(func() {
-				NewEndPoint(NewMethodInvoker(&epMock{}, "Jar5"), Fixture{}, "/abc/{e}", "GET", nil, nil)
+				NewEndPoint(NewMethodInvoker(&epMock{}, "Jar5"), Fixture{Url: "/abc/{e}"}, "GET", nil, nil) // "/abc/{e}",
 			}, ShouldPanic)
 		})
 		Convey("Jar input at the end should be ok", func() {
-			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Jar4"), Fixture{}, "/abc/{d}", "GET", nil, nil)
-			So(ep.needsJarInput, ShouldBeTrue)
+			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Jar4"), Fixture{Url: "/abc/{d}"}, "GET", nil, nil) // "/abc/{d}",
+			So(ep.jarInput, ShouldBeTrue)
 		})
 	})
 }
@@ -173,9 +173,4 @@ func TestStructOutputIsAllowed(t *testing.T) {
 			So(f.Version, ShouldEqual, "1.2.3")
 		})
 	})
-}
-
-
-type dbService {
-	RestService
 }
