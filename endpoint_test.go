@@ -2,6 +2,7 @@ package aqua
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"net/http"
@@ -146,31 +147,188 @@ func TestUrlNameConstruction(t *testing.T) {
 	})
 }
 
-type structService struct {
+type dataService struct {
 	RestService
-	getStruct GetApi
+	getStruct  GetApi
+	getStructI GetApi
+	getString  GetApi
+	getStringI GetApi
+	getMap     GetApi
+	getMapI    GetApi
+	getSlice   GetApi
+	getSliceI  GetApi
 }
 
-func (me *structService) GetStruct() Fixture {
+func (me *dataService) GetStruct() Fixture {
 	return Fixture{
 		Version: "1.2.3",
 	}
 }
 
-func TestStructOutputIsAllowed(t *testing.T) {
+func (me *dataService) GetStructI() interface{} {
+	return Fixture{
+		Version: "1.2.3.4",
+	}
+}
+
+func (me *dataService) GetString() string {
+	return "5"
+}
+
+func (me *dataService) GetStringI() interface{} {
+	return "5.5"
+}
+
+func (me *dataService) GetMap() map[string]interface{} {
+	m := map[string]interface{}{"whats": "up", "num": 1234}
+	return m
+}
+
+func (me *dataService) GetMapI() interface{} {
+	m := map[string]interface{}{"whats": "up", "num": 12345}
+	return m
+}
+
+func (me *dataService) GetSlice() []string {
+	return []string{"one", "two"}
+}
+
+func (me *dataService) GetSliceI() interface{} {
+	return []string{"three", "four"}
+}
+
+func TestAllOutputDataFormats(t *testing.T) {
 	s := NewRestServer()
-	s.AddService(&structService{})
+	s.AddService(&dataService{})
 	s.Port = getUniquePortForTestCase()
 	s.RunAsync()
 
-	Convey("Given a service endpoint that retuns a struct", t, func() {
-		url := fmt.Sprintf("http://localhost:%d/struct/get-struct", s.Port)
-		_, _, content := getUrl(url, nil)
+	Convey("Given a service that provides all data formats", t, func() {
 
-		Convey("Then the field(s) of the struct should have the same value as passed", func() {
+		Convey("Then the struct output should work", func() {
+			url := fmt.Sprintf("http://localhost:%d/data/get-struct", s.Port)
+			_, _, content := getUrl(url, nil)
 			var f Fixture
 			json.Unmarshal([]byte(content), &f)
 			So(f.Version, ShouldEqual, "1.2.3")
+		})
+
+		Convey("Then the struct output for interface{} should work", func() {
+			url := fmt.Sprintf("http://localhost:%d/data/get-struct-i", s.Port)
+			_, _, content := getUrl(url, nil)
+			var f Fixture
+			json.Unmarshal([]byte(content), &f)
+			So(f.Version, ShouldEqual, "1.2.3.4")
+		})
+
+		Convey("Then the string output should work", func() {
+			url := fmt.Sprintf("http://localhost:%d/data/get-string", s.Port)
+			_, _, content := getUrl(url, nil)
+			So(content, ShouldEqual, "5")
+		})
+
+		Convey("Then the string output for interface{} should work", func() {
+			url := fmt.Sprintf("http://localhost:%d/data/get-string-i", s.Port)
+			_, _, content := getUrl(url, nil)
+			So(content, ShouldEqual, "5.5")
+		})
+
+		Convey("Then the map output should work", func() {
+			url := fmt.Sprintf("http://localhost:%d/data/get-map", s.Port)
+			_, _, content := getUrl(url, nil)
+			var m map[string]interface{}
+			json.Unmarshal([]byte(content), &m)
+			So(m["whats"], ShouldEqual, "up")
+			So(m["num"], ShouldEqual, 1234)
+		})
+
+		Convey("Then the map output for interface{} should work", func() {
+			url := fmt.Sprintf("http://localhost:%d/data/get-map-i", s.Port)
+			_, _, content := getUrl(url, nil)
+			var m map[string]interface{}
+			json.Unmarshal([]byte(content), &m)
+			So(m["whats"], ShouldEqual, "up")
+			So(m["num"], ShouldEqual, 12345)
+		})
+
+		Convey("Then the [slice] output should work", func() {
+			url := fmt.Sprintf("http://localhost:%d/data/get-slice", s.Port)
+			_, _, content := getUrl(url, nil)
+			var m []interface{}
+			json.Unmarshal([]byte(content), &m)
+			So(m[0], ShouldEqual, "one")
+			So(m[1], ShouldEqual, "two")
+		})
+
+		Convey("Then the [slice] output for interface{} should work", func() {
+			url := fmt.Sprintf("http://localhost:%d/data/get-slice-i", s.Port)
+			_, _, content := getUrl(url, nil)
+			var m []interface{}
+			json.Unmarshal([]byte(content), &m)
+			So(m[0], ShouldEqual, "three")
+			So(m[1], ShouldEqual, "four")
+		})
+
+	})
+}
+
+type errService struct {
+	RestService
+	getErrorI  GetApi
+	getFaultI  GetApi
+	postErrorI PostApi
+}
+
+func (me *errService) GetErrorI() interface{} {
+	return errors.New("bingo-error")
+}
+
+func (me *errService) GetFaultI() interface{} {
+	return NewFault(errors.New("shingo-error"), "there was an error")
+}
+
+func (me *errService) PostErrorI() interface{} {
+	return NewFault(errors.New("shingo-error"), "there was an error")
+}
+
+func TestErrorFormats(t *testing.T) {
+	s := NewRestServer()
+	s.AddService(&errService{})
+	s.Port = getUniquePortForTestCase()
+	s.RunAsync()
+
+	Convey("Given a service that provides all data formats", t, func() {
+
+		Convey("Then the error output for interface{} should work", func() {
+			url := fmt.Sprintf("http://localhost:%d/err/get-error-i", s.Port)
+			code, _, content := getUrl(url, nil)
+			So(code, ShouldEqual, 404)
+			var m map[string]interface{}
+			json.Unmarshal([]byte(content), &m)
+			val, _ := m["message"]
+			So(val, ShouldEqual, "Oops! An error was encountered")
+			m2, _ := m["error"].(map[string]interface{})
+			val2, _ := m2["title"]
+			So(val2, ShouldEqual, "bingo-error")
+		})
+
+		Convey("Then the Fault output for interface{} should work", func() {
+			url := fmt.Sprintf("http://localhost:%d/err/get-fault-i", s.Port)
+			code, _, content := getUrl(url, nil)
+			So(code, ShouldEqual, 404)
+			var m map[string]interface{}
+			json.Unmarshal([]byte(content), &m)
+			val, _ := m["message"]
+			So(val, ShouldEqual, "there was an error")
+			m2, _ := m["error"].(map[string]interface{})
+			val2, _ := m2["title"]
+			So(val2, ShouldEqual, "shingo-error")
+		})
+
+		Convey("Then the Fault output for interface{} should work", func() {
+			url := fmt.Sprintf("http://localhost:%d/err/post-error-i", s.Port)
+			code, _, _ := postUrl(url, nil, nil)
+			So(code, ShouldEqual, 422)
 		})
 	})
 }

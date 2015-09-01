@@ -54,14 +54,10 @@ func NewRestServer() RestServer {
 var printed bool = false
 
 func (me *RestServer) AddModule(name string, f func(http.Handler) http.Handler) {
-	// TODO: check if the same key alread exists
-	// TODO: AddModule must be called before AddService
 	me.mods[name] = f
 }
 
 func (me *RestServer) AddCache(name string, c cache.Cacher) {
-	// TODO: check if the same key already exists
-	// TODO: AddCache must be called before AddService
 	me.stores[name] = c
 }
 
@@ -70,7 +66,6 @@ func (me *RestServer) AddService(svc interface{}) {
 }
 
 func (me *RestServer) loadAllEndpoints() {
-
 	for _, i := range me.svcs {
 		me.loadServiceEndpoints(i)
 	}
@@ -82,7 +77,7 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 	me.validateService(svc)
 
 	if !printed {
-		fmt.Println("Loading...")
+		fmt.Println("Loading endpoints...")
 		printed = true
 	}
 
@@ -116,34 +111,74 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 
 		method = getHttpMethod(field)
 		if method == "" {
-			// Skip non http method fields
+			// Skip fields with unsupported types
 			continue
 		}
 
-		v := ""
-		if fix.Version != "" {
-			v = fix.Version
-		}
-		serviceId := cleanUrl(method, fix.Prefix, v, fix.Root, fix.Url)
+		if method == "CRUD" {
 
-		if _, found := me.apis[serviceId]; found {
-			panik.Do("Cannot load same service again %s in %s", serviceId, svcType.String())
-		}
+			{
+				// TODO: crud method should have only 1 input and 1 output to type CrudApi
+				//Do method validations
+				NewEndPoint(NewMethodInvoker(svc, upFirstChar(field.Name)), fix, "CRUD", me.mods, me.stores)
+			}
 
-		exec := NewMethodInvoker(svc, upFirstChar(field.Name))
-		if exec.exists || fix.Stub != "" {
-			ep := NewEndPoint(exec, fix, method, me.mods, me.stores)
-			ep.setupMuxHandlers(me.mux)
-			me.apis[serviceId] = ep
-			fmt.Printf("%s\n", serviceId)
-			//fmt.Println(fix)
+			vals := reflect.ValueOf(svc).MethodByName(upFirstChar(field.Name)).Call([]reflect.Value{})
+			crud := vals[0].Interface().(CrudApi)
+			crud.validate()
+
+			var exec Invoker
+			var f Fixture
+
+			// GET calls (to read)
+			f = fix
+			f.Url += "/{pkey}"
+			exec = NewMethodInvoker(&crud, "Crud_Read")
+			if exec.exists || f.Stub != "" {
+				ep := NewEndPoint(exec, f, "GET", me.mods, me.stores)
+				svcUrl := ep.setupMuxHandlers(me.mux)
+				svcId := fmt.Sprintf("%s:%s", "GET", svcUrl)
+				if _, found := me.apis[svcId]; found {
+					panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
+				} else {
+					me.apis[svcId] = ep
+				}
+			}
+
+			// POST calls (to create)
+			f = fix
+			exec = NewMethodInvoker(&crud, "Crud_Create")
+			if exec.exists || f.Stub != "" {
+				ep := NewEndPoint(exec, f, "POST", me.mods, me.stores)
+				svcUrl := ep.setupMuxHandlers(me.mux)
+				svcId := fmt.Sprintf("%s:%s", "POST", svcUrl)
+				if _, found := me.apis[svcId]; found {
+					panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
+				} else {
+					me.apis[svcId] = ep
+				}
+			}
+
+		} else {
+
+			exec := NewMethodInvoker(svc, upFirstChar(field.Name))
+			if exec.exists || fix.Stub != "" {
+				ep := NewEndPoint(exec, fix, method, me.mods, me.stores)
+				svcUrl := ep.setupMuxHandlers(me.mux)
+				svcId := fmt.Sprintf("%s:%s", method, svcUrl)
+				if _, found := me.apis[svcId]; found {
+					panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
+				} else {
+					me.apis[svcId] = ep
+				}
+			}
 		}
 	}
 }
 
 func (me *RestServer) validateService(svc interface{}) {
 	svcType := reflect.TypeOf(svc)
-	code := getSymbolFromType(svcType)
+	code := getSignOfType(svcType)
 
 	// validation: must be pointer
 	if !strings.HasPrefix(code, "*st:") {

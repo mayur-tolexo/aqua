@@ -15,7 +15,7 @@ import (
 )
 
 type endPoint struct {
-	exec       MethodInvoker
+	exec       Invoker
 	config     Fixture
 	httpMethod string
 
@@ -29,7 +29,7 @@ type endPoint struct {
 	stash          cache.Cacher
 }
 
-func NewEndPoint(inv MethodInvoker, f Fixture, httpMethod string, mods map[string]func(http.Handler) http.Handler,
+func NewEndPoint(inv Invoker, f Fixture, httpMethod string, mods map[string]func(http.Handler) http.Handler,
 	caches map[string]cache.Cacher) endPoint {
 
 	out := endPoint{
@@ -110,7 +110,9 @@ func (me *endPoint) validateMuxVarsMatchFuncInputs() {
 		if me.jarInput {
 			inputs += -1
 		}
-		if len(me.muxVars) != inputs {
+		if me.httpMethod == "CRUD" {
+			panik.If(inputs != 0, "Crud methods should not take any inputs %s", me.exec.name)
+		} else if len(me.muxVars) != inputs {
 			panic(fmt.Sprintf("%s has %d inputs, but the func (%s) has %d",
 				me.urlWithVersion, len(me.muxVars), me.exec.name, inputs))
 		}
@@ -138,30 +140,32 @@ func (me *endPoint) validateFuncOutputsAreCorrect() {
 	accepts["map"] = true
 	accepts["st:github.com/thejackrabbit/aqua.Sac"] = true
 	accepts["*st:github.com/thejackrabbit/aqua.Sac"] = true
+	accepts["i:."] = true
 
 	if !me.stdHandler {
 		switch me.exec.outCount {
 		case 1:
 			_, found := accepts[me.exec.outParams[0]]
-			if !found && !strings.HasPrefix(me.exec.outParams[0], "st:") {
-				fmt.Println(me.exec.outParams[0])
-				panic("Incorrect return type found in: " + me.exec.name)
+			correctPrefix := strings.HasPrefix(me.exec.outParams[0], "st:") || strings.HasPrefix(me.exec.outParams[0], "sl:")
+			if !found && !correctPrefix {
+				panic("Incorrect return type found in: " + me.exec.name + " - " + me.exec.outParams[0])
 			}
 		case 2:
 			if me.exec.outParams[0] != "int" {
 				panic("When a func returns two params, the first must be an int (http status code) : " + me.exec.name)
 			}
 			_, found := accepts[me.exec.outParams[1]]
-			if !found && !strings.HasPrefix(me.exec.outParams[1], "st:") {
-				panic("Incorrect return type for second return param found in: " + me.exec.name)
+			correctPrefix := strings.HasPrefix(me.exec.outParams[0], "st:") || strings.HasPrefix(me.exec.outParams[0], "sl:")
+			if !found && !correctPrefix {
+				panic("Incorrect return type for second return param found in: " + me.exec.name + " - " + me.exec.outParams[1])
 			}
 		default:
-			panic("Incorrect number of returns for Func: " + me.exec.name)
+			panik.Do("Incorrect number of returns for Func: %s", me.exec.name)
 		}
 	}
 }
 
-func (me *endPoint) setupMuxHandlers(mux *mux.Router) {
+func (me *endPoint) setupMuxHandlers(mux *mux.Router) (svcUrl string) {
 
 	m := interpose.New()
 	for i, _ := range me.modules {
@@ -173,12 +177,16 @@ func (me *endPoint) setupMuxHandlers(mux *mux.Router) {
 
 	if me.config.Version == "" {
 		// url without version
+		svcUrl = me.urlWoVersion
 		mux.Handle(me.urlWoVersion, m).Methods(me.httpMethod)
+		fmt.Printf("%s:%s\r\n", me.httpMethod, me.urlWoVersion)
 
 		// TODO: should we add content type application+json here?
 	} else {
 		// versioned url
+		svcUrl = me.urlWithVersion
 		mux.Handle(me.urlWithVersion, m).Methods(me.httpMethod)
+		fmt.Printf("%s:%s\r\n", me.httpMethod, me.urlWithVersion)
 
 		// content type (style1)
 		header1 := fmt.Sprintf("application/%s-v%s+json", me.config.Vendor, me.config.Version)
@@ -188,6 +196,8 @@ func (me *endPoint) setupMuxHandlers(mux *mux.Router) {
 		header2 := fmt.Sprintf("application/%s+json;version=%s", me.config.Vendor, me.config.Version)
 		mux.Handle(me.urlWoVersion, m).Methods(me.httpMethod).Headers("Accept", header2)
 	}
+
+	return svcUrl
 }
 
 func handleIncoming(e *endPoint) func(http.ResponseWriter, *http.Request) {
@@ -258,7 +268,7 @@ func handleIncoming(e *endPoint) func(http.ResponseWriter, *http.Request) {
 			} else {
 				out = e.exec.Do(ref)
 			}
-			writeOutput(w, e.exec.outParams, out, e.config.Pretty)
+			writeOutput(w, r, e.exec.outParams, out, e.config.Pretty)
 		}
 	}
 }

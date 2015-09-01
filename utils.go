@@ -63,24 +63,28 @@ func removeMultSlashes(inp string) string {
 	return find.ReplaceAllString(inp, "/")
 }
 
-func getSymbolFromType(t reflect.Type) string {
+func getSignOfType(t reflect.Type) string {
 	symb := ""
 	if t.Kind() == reflect.Ptr {
-		symb = "*" + getSymbolFromType(t.Elem())
+		symb = "*" + getSignOfType(t.Elem())
 	} else if t.Kind() == reflect.Map {
 		symb = "map"
 	} else if t.Kind() == reflect.Struct {
 		symb = "st:" + t.PkgPath() + "." + t.Name()
 	} else if t.Kind() == reflect.Interface {
 		symb = "i:" + t.PkgPath() + "." + t.Name()
+	} else if t.Kind() == reflect.Array {
+		symb = "sl:" + t.Elem().PkgPath() + "." + t.Elem().Name()
+	} else if t.Kind() == reflect.Slice {
+		symb = "sl:" + t.Elem().PkgPath() + "." + t.Elem().Name()
 	} else {
 		symb = t.Name()
 	}
 	return symb
 }
 
-func getSymbolFromObject(o interface{}) string {
-	return getSymbolFromType(reflect.TypeOf(o))
+func getSignOfObject(o interface{}) string {
+	return getSignOfType(reflect.TypeOf(o))
 }
 
 func toUrlCase(camel string) string {
@@ -154,7 +158,7 @@ func getUniquePortForTestCase() int {
 func getHttpMethod(field reflect.StructField) string {
 	var out string = ""
 	switch field.Type.String() {
-	case "aqua.GetApi", "aqua.PostApi", "aqua.PutApi", "aqua.PatchApi", "aqua.DeleteApi":
+	case "aqua.GetApi", "aqua.PostApi", "aqua.PutApi", "aqua.PatchApi", "aqua.DeleteApi", "aqua.CrudApi":
 		out = field.Type.String()
 		out = out[5 : len(out)-3]
 		out = strings.ToUpper(out)
@@ -203,4 +207,9 @@ func convertToType(vars []string, typ []string) []reflect.Value {
 		}
 	}
 	return vals
+}
+
+func isError(e interface{}) bool {
+	_, ok := e.(error)
+	return ok
 }

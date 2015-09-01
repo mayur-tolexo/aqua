@@ -1,10 +1,9 @@
 # AQUA
 Golang Restful APIs in a cup, and ready to serve!
 
-
-##Inspiration
-- Apache and IIS WebServers
-- Go-Rest API framework
+## Inspiration
+- Go-Rest framework for service controllers and tag-based configurations
+- Apache and IIS WebServers for hierarchical configuration model
 
 ## Design Goals
 
@@ -33,6 +32,7 @@ Golang Restful APIs in a cup, and ready to serve!
   - Caching
   - Database binding (for CRUD operations) *|pending*
   - Working with Queues *|pending*
+  - Proxying or Wrapping around existing APIs *|pending*
   - Stubbing
      - If there are code/project dependencies on your api service, you can simply write a stub (sample output) in an external file and publish this mock api quickly before writing actual business logic
 - You can define modules (middleware) at a project level and then apply them to any service using Aqua's powerful configuration model
@@ -68,6 +68,7 @@ server.Run()
 Now open your browser window, and hit http://localhost:8090/hello/world
 
 ---
+
 
 ### Q: But I don't need any magic; What about the unadulterated http requests and responses?
 
@@ -172,9 +173,13 @@ Then you get the final url as:
 
 http://localhost:8090/sushine/v1.0/this-is-the/good/old/moon. 
 
+---
+
 ### Q: Does Aqua use any mux?
 
 Yes, Gorilla mux is used internally. So to define url parameters, we'll need to follow Gorilla mux conventions. We'll get to those in a moment
+
+---
 
 ### Q: How can I check if the server is up and running?
 
@@ -194,6 +199,8 @@ server.AddService(&HelloService{})
 server.Port = 5432;
 server.Run()
 ```
+
+---
 
 ### Q: When I use api versioning, can I use HTTP headers to pass the version info?
 
@@ -226,6 +233,7 @@ Basis this, the required Accept header will be need to changed to following:
 -  *-or-*
 - "Accept" header : "application/__vnd.myorg.myfunc.api__-v1.0+json"
 
+---
 
 ### Q: How can I access query strings?
 
@@ -244,6 +252,8 @@ func (me *HelloService) World(j aqua.Jar) string {
 ```
 
 Now, just hit the url: http://localhost:8090/hello/world?country=Singapore
+
+---
 
 ### Q: How do I pass dynamic parameters to apis?
 
@@ -274,7 +284,7 @@ type HelloService struct {
 	capital aqua.GetApi `url:/capital/{cap:[0-9]+}`
 }
 ```
-
+---
 
 ### Q: Can you explain how the configuration model works? Will I need to define attributes at each endpoint level?
 
@@ -286,6 +296,8 @@ Aqua has a powerful configuration model that works at 4 levels:
 4. Endpoint (declaratively)
 
 Lets look at each of them in detail
+
+---
 
 ##### 1. Server (programmatically)
 
@@ -302,6 +314,8 @@ server.AddService(&HelloService{})
 server.AddService(&HolaService{})
 server.Run()
 ```
+---
+
 ##### 2. Service controller (declaratively)
 
 We added two service controllers to the server above - HelloService and HolaService. Let's assume that all the contained services need to begin with words 'Hello' and 'Hola' respectively. 
@@ -320,6 +334,8 @@ type HelloService struct {
 
 This ensures that all services in this now __inherit__ the root value of "Hello"
 
+---
+
 ##### 4. Endpoint (declaratively)
 
 Last but not the least, you can specify a value at a service endpoint. You can do so by configuring at the api level as shown below. Note that these values will override the inherited values.
@@ -334,15 +350,203 @@ type HelloService struct {
 }
 ```
 
-###Q: What all configurations are available in Aqua?
+---
+
+### Q: What all configurations are available in Aqua?
+
+| Tag          | Usage            
+| ----------   |----------------- 
+| prefix, pre  | Url prefix as in: http://abc.com/[prefix]/v1/root/url                 
+| root         | Url root as in: http://abc.com/prefix/v1/[root]/url                                  
+| url          | Url path as in in: http://abc.com/prefix/v1/root/[url]                            
+| version, ver | Url version as in: http://abc.com/prefix/v[1]/root/url                                  
+| vendor, vnd  | 
+| modules, mods| Sequence of module names (or middlewares) that the request goes through                 
+| cache        | The name of cache provider to use
+| ttl          | Duration to cache (e.g. 5s or 10m)
+| stub         | Relative or absolute path to the file containing the mock stub
+
+---
+
+### Q: Is caching supported? How do I configure it?
+
+Multiple cache provider's can be added to RestServer via its AddCache method. The arguments are the unique name of the cache and an implementation of Cacher interface. Note: this interface is defined in the sister library aero/cache
+
+```
+server := aqua.NewRestServer()
+server.AddCache("mycache", <implementation of aero.cache.Cacher>)
+server.Run()
+```
+
+This interface is defined as:
+
+```
+// package aero.cache
+type Cacher interface {
+	Set(key string, data []byte, expireIn time.Duration)
+	Get(key string) ([]byte, error)
+}
+```
+
+"aero.cache" also defined multiple implementations of this interface, namely:
+
+1. Memcache implementation
+2. Redis implementation
+3. In memory cache (recommended for dev boxes)
+4. Debug Wrapper to log reads and writes to text files (for debugging)
+
+Let's utilize the memcache implementation. 
+
+```
+server := aqua.NewRestServer()
+server.AddCache("mycache", cache.NewMemcache("127.0.0.1", 11211))
+server.AddCache("remote", cache.NewMemcache("123.234.012.23", 11211))
+server.Cache = "mycache" // default for all endpoints
+server.Run()
+```
+
+Now all we need to do to use this cache is to set the "ttl" tag. So lets look at some services
+
+```
+type CatalogService struct {
+	RestService
+	getProduct  GetApi `url:"product/{id}"  ttl:"5m"`
+	getSeller   GetApi `url:"seller/{id}"   ttl:"15m" cache:"remote"`
+}
+```
+Thats it. You are good to go!
+
+Service http://localhost:8090/catalog/product/{id} inherts cache as "mycache" from server. All calls to different invocations will get cached for 5min (as set in ttl).
+
+Service http://localhost:8090/catalog/seller/{id} overrides the server cache and sets its cache store to be "remote". So, all invocations will be saved in this remote memcache instance for a rolling 15min duration.
+
+Current limitations:
+
+- only available for GET calls (others will be added)
+- not supported when using standard http handler (w http.ResponseWriter, r *http.Request)
+
+Note: the cache key is the the unique url of the request (including the query string parameters)
+
+---
+
+### Q: What are 'modules' and how can I use them? (Or, does Aqua support Golang middleware?)
+
+Modules allow you to harness the power of Golang middleware. A module is a function that returns an anonymous function that consumes an http.Handler and returns another http.Handler. The signature of the module would be:
+
+```
+func SomeFunc(<params_if_needed>) func(http.Handler) http.Handler {
+  // code
+}
+```
+Say, we want to log all those calls that are taking more then 1 sec to return. So we write this module as:
+
+```
+func LogSlowCalls() func(http.Handler) http.Handler {
+  file := "/path"
+  f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+  if err != nil {
+     // error handling..
+  }
+  l := log.New(f, "", log.LstdFlags)
+  return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			next.ServeHTTP(w, r)
+			dur := time.Since(start).Seconds()
+			if dur >= 1 {
+				l.Printf("%s %s %.3f", r.Method, r.RequestURI, time.Since(start).Seconds())
+			}
+		})
+	}
+}
+```
+We can also pass duration to log and file path as parameters to LogSlowCalls function to make it more customizable. Now lets add this module to our server.
+
+```
+server := aqua.NewRestServer()
+server.AddModule("slowLog", LogSlowCalls("/tmp/file.log", 1))
+server.Run()
+
+// And to use it in our service, we just pass it to the tag
+type CatalogService struct {
+	RestService
+	getProduct  GetApi `url:"product/{id}"  module:"slowLog"`
+	getSeller   GetApi `url:"seller/{id}"`  module:"slowLog, module2, module3"
+}
+
+```
+
+Note:
+
+- slowLog is set for getProduct endpoint. Any request that takes more than 1 sec will be logged. 
+- getSeller endpoint has multiple modules set in a comma seprated manner. All these will be invoked in the sequence slowLog (first) → module2 → module3 (last) → and finally the method "GetProduct".
+- Aqua uses **github.com/carbocation/interpose** for method chaining internally to setup these golang middleware.
+
+---
+
+### Q: Are there any out-of-box modules bundled with Aqua?
+
+Just a few:
+
+- A slow logger, ModSlowLog, that takes millisec precision as an input
+- An access logger, ModAccessLog
+
+---
+
+### Q: Can I create mock apis to de-bottleneck development?
+
+Yes. Aqua makes is possible to create mock api stubs using external files. You can specify an associated file using the "stub" tag as shown below. 
+
+```
+type MockService struct {
+	RestService
+	yetToCode  GetApi `stub:"samples/some.json"`
+}
+
+// And then run it
+server := aqua.NewRestServer()
+server.AddService(&MockService{})
+server.Run()
+```
+Now when you invoke http://localhost:8090/mock/yet-to-code then the contents of "samples/some.json" file are read and returned. Note that the returned code may not necessarily be json data. It can be anything. 
+
+Aqua searches for file in both:
+
+- executable directory, and
+- working directory
+
+
+Also, you can specify file path using both:
+
+- relative file syntax, and
+- absolute file path syntax
+
+If the file is not found then Aqua returns 400 status code. 
+
+When using such mock stubs, you don't need to define any methods for your endpoints.
+
+---
+
+### Q: Is there any support for creating CRUD api's out of the box?
+
+---
+
+### Q: CRUD works for RDBMS only or supports other NoSQL systems?
+
+---
+
+### Q: Can I do CRUD only or ad-hoc querying is also supported?
+
+---
+
+### Q: If I wanted to switch out gorm (default ORMapping tool used), and switch to a different one then can that be achieved?
+
+---
+
+### Q: What are different return types allowed for methods in Aqua?
+
+---
 
 
 
-### Q: How do I enable caching for my apis?
-
-### Q: What are 'modules' and how can I use them?
-
-### Q: Can I create mock apis?
-
-### Q: What are different return types supported by default?
 

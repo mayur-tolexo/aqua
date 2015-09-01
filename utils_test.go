@@ -43,12 +43,12 @@ func TestGetTypeInfo(t *testing.T) {
 	Convey("Given the function: getSymbolFromType()", t, func() {
 		Convey("Then it should revert st:<package-name>.<struct-name> for a struct type", func() {
 			a := Sac{}
-			So(getSymbolFromType(reflect.TypeOf(a)), ShouldEqual, "st:github.com/thejackrabbit/aqua.Sac")
-			So(getSymbolFromType(reflect.TypeOf(&a)), ShouldEqual, "*st:github.com/thejackrabbit/aqua.Sac")
+			So(getSignOfType(reflect.TypeOf(a)), ShouldEqual, "st:github.com/thejackrabbit/aqua.Sac")
+			So(getSignOfType(reflect.TypeOf(&a)), ShouldEqual, "*st:github.com/thejackrabbit/aqua.Sac")
 		})
 		Convey("Then it should revert map for a map-type", func() {
 			a := make(map[string]interface{})
-			So(getSymbolFromType(reflect.TypeOf(a)), ShouldEqual, "map")
+			So(getSignOfType(reflect.TypeOf(a)), ShouldEqual, "map")
 		})
 	})
 }

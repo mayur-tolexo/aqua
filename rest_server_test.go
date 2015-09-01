@@ -177,8 +177,8 @@ func TestConfigurationHierarchy(t *testing.T) {
 			u := UserServiceA{}
 			s.AddService(&u)
 			s.loadAllEndpoints()
-			apiId := cleanUrl("GET", "", "0.2", "/A/get-user")
-			_, found := s.apis[apiId]
+			apiId := cleanUrl("v0.2", "/A/get-user")
+			_, found := s.apis["GET:"+apiId]
 			So(found, ShouldBeTrue)
 		})
 
@@ -188,8 +188,8 @@ func TestConfigurationHierarchy(t *testing.T) {
 			u := UserServiceB{}
 			s.AddService(&u)
 			s.loadAllEndpoints()
-			apiId := cleanUrl("GET", "", "0.3", "/B/get-user")
-			_, found := s.apis[apiId]
+			apiId := cleanUrl("v0.3", "/B/get-user")
+			_, found := s.apis["GET:"+apiId]
 			So(found, ShouldBeTrue)
 		})
 
@@ -200,8 +200,8 @@ func TestConfigurationHierarchy(t *testing.T) {
 			u.Version = "0.4"
 			s.AddService(&u)
 			s.loadAllEndpoints()
-			apiId := cleanUrl("GET", "", "0.4", "/C/get-user")
-			_, found := s.apis[apiId]
+			apiId := cleanUrl("v0.4", "/C/get-user")
+			_, found := s.apis["GET:"+apiId]
 			So(found, ShouldBeTrue)
 		})
 
@@ -212,8 +212,8 @@ func TestConfigurationHierarchy(t *testing.T) {
 			u.Version = "0.4"
 			s.AddService(&u)
 			s.loadAllEndpoints()
-			apiId := cleanUrl("GET", "", "0.5", "/D/get-user")
-			_, found := s.apis[apiId]
+			apiId := cleanUrl("v0.5", "/D/get-user")
+			_, found := s.apis["GET:"+apiId]
 			So(found, ShouldBeTrue)
 		})
 	})

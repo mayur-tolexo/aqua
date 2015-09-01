@@ -1,59 +1,88 @@
 package aqua
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/thejackrabbit/aero/panik"
+	"github.com/thejackrabbit/aero/strukt"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
 )
 
-func writeOutput(w http.ResponseWriter, outType []string, outVals []reflect.Value, pretty string) {
+func writeOutput(w http.ResponseWriter, r *http.Request, signs []string, vals []reflect.Value, pretty string) {
 
-	if len(outType) == 1 {
-		if outType[0] == "int" {
-			w.WriteHeader(int(outVals[0].Int()))
+	if len(signs) == 1 {
+		if signs[0] == "int" {
+			w.WriteHeader(int(vals[0].Int()))
 		} else {
-			writeItem(w, outType[0], outVals[0], pretty)
+			writeItem(w, r, signs[0], vals[0], pretty)
 		}
-	} else if len(outType) == 2 {
-		w.WriteHeader(int(outVals[0].Int()))
-		writeItem(w, outType[1], outVals[1], pretty)
+	} else if len(signs) == 2 {
+		// first thing would be an integer (http status code)
+		w.WriteHeader(int(vals[0].Int()))
+
+		// second be the payload
+		writeItem(w, r, signs[1], vals[1], pretty)
 	}
 }
 
-func writeItem(w http.ResponseWriter, oType string, oVal reflect.Value, pretty string) {
+func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.Value, pretty string) {
 
-	if strings.HasPrefix(oType, "*st:") {
-		o := oVal.Elem()
-		writeItem(w, getSymbolFromType(o.Type()), o, pretty)
+	// Dereference a pointer to a struct
+	if strings.HasPrefix(sign, "*st:") {
+		o := val.Elem()
+		writeItem(w, r, getSignOfType(o.Type()), o, pretty)
 		return
 	}
 
 	switch {
-	case oType == "string":
-		v := oVal.String()
+	case sign == "string":
+		//fmt.Printf("Sign:%s, SignDynamic:%s, Val:%s, Val.I{}:%s, Val.String():%s", sign, getSignOfObject(val.Interface()), val, val.Interface(), val.String())
+		v := val.Interface().(string)
 		w.Header().Set("Content-Type", "text/plain")
 		w.Header().Set("Content-Length", strconv.Itoa(len(v)))
 		fmt.Fprintf(w, "%s", v)
-	case oType == "st:github.com/thejackrabbit/aqua.Sac":
-		s := oVal.Interface().(Sac)
-		writeItem(w, getSymbolFromType(reflect.TypeOf(s.Data)), reflect.ValueOf(s.Data), pretty)
-	case oType == "map", strings.HasPrefix(oType, "st:"):
-		var j []byte
-		var e error
-		if pretty == "true" || pretty == "1" {
-			j, e = json.MarshalIndent(oVal.Interface(), "", "\t")
-			panicIf(e)
-		} else {
-			j, e = json.Marshal(oVal.Interface())
-			panicIf(e)
+	case sign == "st:github.com/thejackrabbit/aqua.Sac":
+		s := val.Interface().(Sac)
+		writeItem(w, r, getSignOfObject(s.Data), reflect.ValueOf(s.Data), pretty)
+	case isError(val.Interface()):
+		f := NewFault(val.Interface().(error), "Oops! An error was encountered")
+		writeItem(w, r, getSignOfObject(f), reflect.ValueOf(f), pretty)
+	case sign == "st:github.com/thejackrabbit/aqua.Fault":
+		j, _ := strukt.ToBytesPretty(val.Interface(), pretty == "true" || pretty == "1")
+		switch r.Method {
+		case "GET":
+			w.WriteHeader(404)
+		case "POST":
+			w.WriteHeader(422)
+		default:
+			panik.Do("Status code missing for method %", r.Method)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
 		w.Write(j)
+	case sign == "map":
+		j, _ := strukt.ToBytesPretty(val.Interface(), pretty == "true" || pretty == "1")
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
+		w.Write(j)
+	case strings.HasPrefix(sign, "st:"):
+		j, _ := strukt.ToBytesPretty(val.Interface(), pretty == "true" || pretty == "1")
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
+		w.Write(j)
+	case strings.HasPrefix(sign, "sl:"), strings.HasPrefix(sign, "ar:"):
+		j, _ := strukt.ToBytesPretty(val.Interface(), pretty == "true" || pretty == "1")
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
+		w.Write(j)
+	case sign == "i:.":
+		writeItem(w, r, getSignOfObject(val.Interface()), val, pretty)
+		fmt.Println("interface{} resolves to:", getSignOfObject(val.Interface()))
+		//TODO: error handling in case the returned object is an error
+		//TODO: along with int, xx, also support xx, error as a function
 	default:
-		fmt.Printf("Don't know how to return a: %s?\n", oType)
+		fmt.Printf("Don't know how to return a: %s?\n", sign)
 	}
 }
