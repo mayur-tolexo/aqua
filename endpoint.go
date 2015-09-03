@@ -155,7 +155,7 @@ func (me *endPoint) validateFuncOutputsAreCorrect() {
 				panic("When a func returns two params, the first must be an int (http status code) : " + me.exec.name)
 			}
 			_, found := accepts[me.exec.outParams[1]]
-			correctPrefix := strings.HasPrefix(me.exec.outParams[0], "st:") || strings.HasPrefix(me.exec.outParams[0], "sl:")
+			correctPrefix := strings.HasPrefix(me.exec.outParams[1], "st:") || strings.HasPrefix(me.exec.outParams[1], "sl:")
 			if !found && !correctPrefix {
 				panic("Incorrect return type for second return param found in: " + me.exec.name + " - " + me.exec.outParams[1])
 			}

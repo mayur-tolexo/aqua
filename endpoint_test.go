@@ -332,3 +332,49 @@ func TestErrorFormats(t *testing.T) {
 		})
 	})
 }
+
+type param2Service struct {
+	RestService
+	getStruct GetApi
+	getString GetApi
+	getMap    GetApi
+	getSlice  GetApi
+	getI      GetApi
+}
+
+func (s *param2Service) GetStruct() (int, Fixture) {
+	return 200, Fixture{}
+}
+
+func (s *param2Service) GetString() (int, string) {
+	return 200, "abc"
+}
+
+func (s *param2Service) GetMap() (int, map[string]interface{}) {
+	var m map[string]interface{} = make(map[string]interface{})
+	return 200, m
+}
+
+func (s *param2Service) GetSlice() (int, []Fixture) {
+	return 200, []Fixture{
+		Fixture{},
+	}
+}
+
+func (s *param2Service) GetI() (int, interface{}) {
+	return 200, 12345
+}
+
+func TestServicesReturning2Params(t *testing.T) {
+
+	Convey("Given a service that has services returning 2 parameters", t, func() {
+		Convey("Then returning int (status code) followed by is map/struct/interface/string/slice is acceptable", func() {
+			So(func() {
+				s := NewRestServer()
+				s.AddService(&param2Service{})
+				s.Port = getUniquePortForTestCase()
+				s.RunAsync()
+			}, ShouldNotPanic)
+		})
+	})
+}
