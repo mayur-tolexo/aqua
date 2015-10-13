@@ -127,6 +127,7 @@ func TestVersionCapability(t *testing.T) {
 type namingServ struct {
 	RestService `root:"any" prefix:"day"`
 	getapi      GetApi `version:"1.0" url:"api"`
+	noversion   GetApi `url:"noversion"`
 }
 
 func (me *namingServ) Getapi() string { return "whoa" }
@@ -145,6 +146,15 @@ func TestUrlNameConstruction(t *testing.T) {
 			So(code, ShouldEqual, 200)
 		})
 	})
+
+	Convey("Given a GET endpoint specified with prefix, folder, url but no version", t, func() {
+		Convey("Then the complete url should be combination of above all", func() {
+			url := fmt.Sprintf("http://localhost:%d/day/any/noversion", s.Port)
+			code, _, _ := getUrl(url, nil)
+			So(code, ShouldEqual, 200)
+		})
+	})
+
 }
 
 type dataService struct {
