@@ -127,10 +127,12 @@ func TestVersionCapability(t *testing.T) {
 type namingServ struct {
 	RestService `root:"any" prefix:"day"`
 	getapi      GetApi `version:"1.0" url:"api"`
-	noversion   GetApi `url:"noversion"`
+	noversion   GetApi `url:"noversion-here"`
 }
 
 func (me *namingServ) Getapi() string { return "whoa" }
+
+func (me *namingServ) Noversion() string { return "cool" }
 
 func TestUrlNameConstruction(t *testing.T) {
 
@@ -149,7 +151,7 @@ func TestUrlNameConstruction(t *testing.T) {
 
 	Convey("Given a GET endpoint specified with prefix, folder, url but no version", t, func() {
 		Convey("Then the complete url should be combination of above all", func() {
-			url := fmt.Sprintf("http://localhost:%d/day/any/noversion", s.Port)
+			url := fmt.Sprintf("http://localhost:%d/day/any/noversion-here", s.Port)
 			code, _, _ := getUrl(url, nil)
 			So(code, ShouldEqual, 200)
 		})
@@ -335,7 +337,7 @@ func TestErrorFormats(t *testing.T) {
 			So(val2, ShouldEqual, "shingo-error")
 		})
 
-		Convey("Then the Fault output for interface{} should work", func() {
+		Convey("Then the Fault output for interface{} should work for a Post request", func() {
 			url := fmt.Sprintf("http://localhost:%d/err/post-error-i", s.Port)
 			code, _, _ := postUrl(url, nil, nil)
 			So(code, ShouldEqual, 422)
