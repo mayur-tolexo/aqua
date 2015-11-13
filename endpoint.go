@@ -142,7 +142,10 @@ func (me *endPoint) validateFuncOutputsAreCorrect() {
 	accepts["*st:github.com/thejackrabbit/aqua.Sac"] = true
 	accepts["i:."] = true
 
-	if !me.stdHandler {
+	if me.httpMethod == "CRUD" {
+		panik.If(me.exec.outCount != 1, "CrudApi must return 1 param only")
+		panik.If(me.exec.outParams[0] != "st:github.com/thejackrabbit/aqua.CrudApi", "CrudApi return must be of type CrudApi")
+	} else if !me.stdHandler {
 		switch me.exec.outCount {
 		case 1:
 			_, found := accepts[me.exec.outParams[0]]

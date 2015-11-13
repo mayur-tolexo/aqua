@@ -117,12 +117,10 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 
 		if method == "CRUD" {
 
-			{
-				// TODO: crud method should have only 1 input and 1 output to type CrudApi
-				//Do method validations
-				NewEndPoint(NewMethodInvoker(svc, upFirstChar(field.Name)), fix, "CRUD", me.mods, me.stores)
-			}
+			// Validate crud method parameters (inputs and outputs)
+			NewEndPoint(NewMethodInvoker(svc, upFirstChar(field.Name)), fix, "CRUD", me.mods, me.stores)
 
+			// Validate crud struct fields
 			vals := reflect.ValueOf(svc).MethodByName(upFirstChar(field.Name)).Call([]reflect.Value{})
 			crud := vals[0].Interface().(CrudApi)
 			crud.validate()
@@ -130,11 +128,11 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 			var exec Invoker
 			var f Fixture
 
-			// GET calls (to read)
-			f = fix
-			f.Url += "/{pkey}"
-			exec = NewMethodInvoker(&crud, "Crud_Read")
-			if exec.exists || f.Stub != "" {
+			// Setup GET endpoint and handler (for Reads)
+			{
+				f = fix
+				f.Url += "/{pkey}"
+				exec = NewMethodInvoker(&crud, "Crud_Read")
 				ep := NewEndPoint(exec, f, "GET", me.mods, me.stores)
 				svcUrl := ep.setupMuxHandlers(me.mux)
 				svcId := fmt.Sprintf("%s:%s", "GET", svcUrl)
@@ -145,10 +143,10 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 				}
 			}
 
-			// POST calls (to create)
-			f = fix
-			exec = NewMethodInvoker(&crud, "Crud_Create")
-			if exec.exists || f.Stub != "" {
+			// Setup POST endpoint and handler (for Create)
+			{
+				f = fix
+				exec = NewMethodInvoker(&crud, "Crud_Create")
 				ep := NewEndPoint(exec, f, "POST", me.mods, me.stores)
 				svcUrl := ep.setupMuxHandlers(me.mux)
 				svcId := fmt.Sprintf("%s:%s", "POST", svcUrl)

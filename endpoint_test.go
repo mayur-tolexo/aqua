@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/thejackrabbit/aero/db/cstr"
 	"net/http"
 	"testing"
 )
@@ -388,5 +389,77 @@ func TestServicesReturning2Params(t *testing.T) {
 				s.RunAsync()
 			}, ShouldNotPanic)
 		})
+	})
+}
+
+type someModel struct {
+}
+
+type crudOut1Service struct {
+	RestService
+	outMethod CrudApi
+}
+
+func (s *crudOut1Service) OutMethod() CrudApi {
+	return CrudApi{
+		Storage: cstr.Storage{Engine: "mysql", Conn: "blah"},
+		Model: func() interface{} {
+			return &someModel{}
+		},
+	}
+}
+
+type crudOut2Service struct {
+	RestService
+	outMethod CrudApi
+}
+
+func (s *crudOut2Service) OutMethod() (int, string) {
+	return 200, "blah"
+}
+
+type crudOut3Service struct {
+	RestService
+	outMethod CrudApi
+}
+
+func (s *crudOut3Service) OutMethod() string {
+	return "something"
+}
+
+func TestCrudMethodOutput(t *testing.T) {
+
+	Convey("Given a CRUD api endpoint", t, func() {
+		Convey("Then its method output must return 1 item only", func() {
+			Convey("And its return type must be CrudApi", func() {
+				s := NewRestServer()
+				s.AddService(&crudOut1Service{})
+				s.Port = getUniquePortForTestCase()
+				So(func() {
+					s.RunAsync()
+				}, ShouldNotPanic)
+			})
+
+		})
+
+		Convey("Then it must not return 0 or more than 1 outputs", func() {
+			s := NewRestServer()
+			s.AddService(&crudOut2Service{})
+			s.Port = getUniquePortForTestCase()
+			So(func() {
+				s.RunAsync()
+			}, ShouldPanic)
+
+		})
+
+		Convey("Then return string or int would panic", func() {
+			s := NewRestServer()
+			s.AddService(&crudOut3Service{})
+			s.Port = getUniquePortForTestCase()
+			So(func() {
+				s.RunAsync()
+			}, ShouldPanic)
+		})
+
 	})
 }

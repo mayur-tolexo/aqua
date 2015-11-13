@@ -4,7 +4,9 @@ import (
 	"github.com/thejackrabbit/aero/panik"
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -37,6 +39,24 @@ func ModSlowLog(path string, msec int) func(http.Handler) http.Handler {
 			if dur > 0 {
 				l.Printf("%s %s %.3f", r.Method, r.RequestURI, time.Since(start).Seconds())
 			}
+		})
+	}
+}
+
+func ModRecorder() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			rec := httptest.NewRecorder()
+			next.ServeHTTP(rec, r)
+
+			for k, v := range rec.Header() {
+				w.Header()[k] = v
+			}
+
+			len := rec.Body.Len()
+			w.Header().Set("Content-Length", strconv.Itoa(len))
+			w.WriteHeader(rec.Code)
+			w.Write(rec.Body.Bytes())
 		})
 	}
 }

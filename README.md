@@ -39,8 +39,8 @@ Golang Restful APIs in a cup, and ready to serve!
 
 ##Lets explore these features
 
-### Q: How do I write a 'hello world' api?
-First define a service controller in your project that supports a GET response (aqua.GetApi as its type). Note that the controller defined as a struct must anonymously include aqua.RestService. 
+#### Q: How do I write a 'hello world' api?
+First define a service controller in your project that supports a GET response (aqua.GetApi as its type). Note that the controller defined as a struct must anonymously include aqua.RestService.
 
 ```
 type HelloService struct {
@@ -70,7 +70,7 @@ Now open your browser window, and hit http://localhost:8090/hello/world
 ---
 
 
-### Q: But I don't need any magic; What about the unadulterated http requests and responses?
+#### Q: But I don't need any magic; What about the unadulterated http requests and responses?
 
 Sure, just change the function signature and you are good to go.
 
@@ -81,9 +81,9 @@ func (me *HelloService) World(w http.ResponseWriter, r *http.Request) {
 ```
 ---
 
-###Q: I want to change the url from /hello/world to /hello/moon. Do I need to change the method names?
+####Q: I want to change the url from /hello/world to /hello/moon. Do I need to change the method names?
 
-The service urls are derived from url tags. If none are specified then it defaults to the method name. So you can simply introduce the tag as follows. 
+The service urls are derived from url tags. If none are specified then it defaults to the method name. So you can simply introduce the tag as follows.
 
 ```
 type HelloService struct {
@@ -94,7 +94,7 @@ type HelloService struct {
 
 ---
 
-### Q: What if I need to return both Hello World, and Hello There as different versions of the same GET api?
+#### Q: What if I need to return both Hello World, and Hello There as different versions of the same GET api?
 
 Simply add both the methods, but specify versions in field tags.
 
@@ -119,22 +119,22 @@ http://localhost:8090/v1.1/hello/moon to see the difference.
 
 ---
 
-### Q: What options can I use to customize URLs for my apis? 
+#### Q: What options can I use to customize URLs for my apis?
 
-There are 3 out-of-box setting available, that help you customize URLs. 
+There are 3 out-of-box setting available, that help you customize URLs.
 
 - prefix
 - root
 - url
 
-We have already seen how 'url' works. 
+We have already seen how 'url' works.
 
 To change the root directory (*hello*), you can use the *root* tag at each service level, or more simply at the service controller level as demonstrated below:
 
 ```
 type HelloService struct {
 	aqua.RestService  `root:"this-is-the"`
-	world aqua.GetApi `version:"1.0" url:"moon"` 
+	world aqua.GetApi `version:"1.0" url:"moon"`
 	worldNew aqua.GetApi `version:"1.1" url:"moon"`
 }
 ```
@@ -150,7 +150,7 @@ You can also use the 'prefix' field. This part comes in before version informati
 ```
 type HelloService struct {
 	aqua.RestService  `root:"this-is-the" prefix:"sunshine"`
-	world aqua.GetApi `version:"1.0" url:"moon"` 
+	world aqua.GetApi `version:"1.0" url:"moon"`
 	worldNew aqua.GetApi `version:"1.1" url:"moon"`
 }
 ```
@@ -165,23 +165,23 @@ Also note that, all there of these properties (url, root and prefix) can contain
 ```
 type HelloService struct {
 	aqua.RestService  `root:"this-is-the" prefix:"sunshine"`
-	world aqua.GetApi `version:"1.0" url:"/good/old/moon"` 
+	world aqua.GetApi `version:"1.0" url:"/good/old/moon"`
 }
 ```
 
 Then you get the final url as:
 
-http://localhost:8090/sushine/v1.0/this-is-the/good/old/moon. 
+http://localhost:8090/sushine/v1.0/this-is-the/good/old/moon.
 
 ---
 
-### Q: Does Aqua use any mux?
+#### Q: Does Aqua use any mux?
 
 Yes, Gorilla mux is used internally. So to define url parameters, we'll need to follow Gorilla mux conventions. We'll get to those in a moment
 
 ---
 
-### Q: How can I check if the server is up and running?
+#### Q: How can I check if the server is up and running?
 
 By default an "aqua" route is setup:
 
@@ -189,7 +189,7 @@ By default an "aqua" route is setup:
  - */aqua/status* returns version, go runtime memory information
  - */aqua/time* returns current server time
 
-### Q: What is the default port that Aqua runs on?
+#### Q: What is the default port that Aqua runs on?
 
 It's 8090. You can change it though as follows:
 
@@ -202,12 +202,12 @@ server.Run()
 
 ---
 
-### Q: When I use api versioning, can I use HTTP headers to pass the version info?
+#### Q: When I use api versioning, can I use HTTP headers to pass the version info?
 
 ```
 type CatalogService struct {
 	aqua.RestService  `root:"catalog" prefix:"mycompany"`
-	getProduct aqua.GetApi `version:"1.0" url:"product"` 
+	getProduct aqua.GetApi `version:"1.0" url:"product"`
 }
 ```
 
@@ -219,12 +219,12 @@ If you setup a catalog service as shown above then out of box you can use versio
   -  *-or-*
   - pass a request header "Accept": "application/vnd.api-v1.0+json"
 
-Note: If you want to customize the media type, you can do so. 
+Note: If you want to customize the media type, you can do so.
 
 ```
 type CatalogService struct {
 	aqua.RestService  `root:"catalog" prefix:"mycompany"`
-	getProduct aqua.GetApi `vendor:"vnd.myorg.myfunc.api" version:"1.0" url:"product"` 
+	getProduct aqua.GetApi `vendor:"vnd.myorg.myfunc.api" version:"1.0" url:"product"`
 }
 ```
 Basis this, the required Accept header will be need to changed to following:
@@ -235,7 +235,7 @@ Basis this, the required Accept header will be need to changed to following:
 
 ---
 
-### Q: How can I access query strings?
+#### Q: How can I access query strings?
 
 Its simple, you add an input variable to your implementation method of type aqua.Jar. This variable gives you access to the Request object, and also has some helper method as shown below:
 
@@ -255,9 +255,9 @@ Now, just hit the url: http://localhost:8090/hello/world?country=Singapore
 
 ---
 
-### Q: How do I pass dynamic parameters to apis?
+#### Q: How do I pass dynamic parameters to apis?
 
-You start by defining the url with the appropriate dynamic variable as per the guidelines of Gorilla mux. 
+You start by defining the url with the appropriate dynamic variable as per the guidelines of Gorilla mux.
 
 ```
 type HelloService struct {
@@ -265,7 +265,7 @@ type HelloService struct {
 	world aqua.GetApi `url:"/country/{c}"`
 }
 ```
-Then you just read this value in the associated method. Note: Aqua currently supports passing int and string parameters. 
+Then you just read this value in the associated method. Note: Aqua currently supports passing int and string parameters.
 
 ```
 func (me *HelloService) World(c string) string {
@@ -286,7 +286,7 @@ type HelloService struct {
 ```
 ---
 
-### Q: Can you explain how the configuration model works? Will I need to define attributes at each endpoint level?
+#### Q: Can you explain how the configuration model works? Will I need to define attributes at each endpoint level?
 
 Aqua has a powerful configuration model that works at 4 levels:
 
@@ -299,7 +299,7 @@ Lets look at each of them in detail
 
 ---
 
-##### 1. Server (programmatically)
+###### 1. Server (programmatically)
 
 If you define any configuration at the server level, then it is __inherited__ by all the Service controllers and all the contained services automatically.
 
@@ -316,9 +316,9 @@ server.Run()
 ```
 ---
 
-##### 2. Service controller (declaratively)
+###### 2. Service controller (declaratively)
 
-We added two service controllers to the server above - HelloService and HolaService. Let's assume that all the contained services need to begin with words 'Hello' and 'Hola' respectively. 
+We added two service controllers to the server above - HelloService and HolaService. Let's assume that all the contained services need to begin with words 'Hello' and 'Hola' respectively.
 
 To achive this, we specify the 'root' variable at the top level by defining it agains the RestServer.
 
@@ -336,7 +336,7 @@ This ensures that all services in this now __inherit__ the root value of "Hello"
 
 ---
 
-##### 4. Endpoint (declaratively)
+###### 4. Endpoint (declaratively)
 
 Last but not the least, you can specify a value at a service endpoint. You can do so by configuring at the api level as shown below. Note that these values will override the inherited values.
 
@@ -352,23 +352,24 @@ type HelloService struct {
 
 ---
 
-### Q: What all configurations are available in Aqua?
+#### Q: What all configurations are available in Aqua?
 
 | Tag          | Usage            
-| ----------   |----------------- 
+| ----------   |-----------------
 | prefix, pre  | Url prefix as in: http://abc.com/[prefix]/v1/root/url                 
 | root         | Url root as in: http://abc.com/prefix/v1/[root]/url                                  
 | url          | Url path as in in: http://abc.com/prefix/v1/root/[url]                            
 | version, ver | Url version as in: http://abc.com/prefix/v[1]/root/url                                  
-| vendor, vnd  | 
+| vendor, vnd  |
 | modules, mods| Sequence of module names (or middlewares) that the request goes through                 
 | cache        | The name of cache provider to use
 | ttl          | Duration to cache (e.g. 5s or 10m)
 | stub         | Relative or absolute path to the file containing the mock stub
+| wrap         | Wrapping other/3rd party rest services
 
 ---
 
-### Q: Is caching supported? How do I configure it?
+#### Q: Is caching supported? How do I configure it?
 
 Multiple cache provider's can be added to RestServer via its AddCache method. The arguments are the unique name of the cache and an implementation of Cacher interface. Note: this interface is defined in the sister library aero/cache
 
@@ -395,7 +396,7 @@ type Cacher interface {
 3. In memory cache (recommended for dev boxes)
 4. Debug Wrapper to log reads and writes to text files (for debugging)
 
-Let's utilize the memcache implementation. 
+Let's utilize the memcache implementation.
 
 ```
 server := aqua.NewRestServer()
@@ -429,7 +430,7 @@ Note: the cache key is the the unique url of the request (including the query st
 
 ---
 
-### Q: What are 'modules' and how can I use them? (Or, does Aqua support Golang middleware?)
+#### Q: What are 'modules' and how can I use them? (Or, does Aqua support Golang middleware?)
 
 Modules allow you to harness the power of Golang middleware. A module is a function that returns an anonymous function that consumes an http.Handler and returns another http.Handler. The signature of the module would be:
 
@@ -478,13 +479,13 @@ type CatalogService struct {
 
 Note:
 
-- slowLog is set for getProduct endpoint. Any request that takes more than 1 sec will be logged. 
+- slowLog is set for getProduct endpoint. Any request that takes more than 1 sec will be logged.
 - getSeller endpoint has multiple modules set in a comma seprated manner. All these will be invoked in the sequence slowLog (first) → module2 → module3 (last) → and finally the method "GetProduct".
 - Aqua uses **github.com/carbocation/interpose** for method chaining internally to setup these golang middleware.
 
 ---
 
-### Q: Are there any out-of-box modules bundled with Aqua?
+#### Q: Are there any out-of-box modules bundled with Aqua?
 
 Just a few:
 
@@ -493,9 +494,9 @@ Just a few:
 
 ---
 
-### Q: Can I create mock apis to de-bottleneck development?
+#### Q: Can I create mock apis to de-bottleneck development?
 
-Yes. Aqua makes is possible to create mock api stubs using external files. You can specify an associated file using the "stub" tag as shown below. 
+Yes. Aqua makes is possible to create mock api stubs using external files. You can specify an associated file using the "stub" tag as shown below.
 
 ```
 type MockService struct {
@@ -508,7 +509,7 @@ server := aqua.NewRestServer()
 server.AddService(&MockService{})
 server.Run()
 ```
-Now when you invoke http://localhost:8090/mock/yet-to-code then the contents of "samples/some.json" file are read and returned. Note that the returned code may not necessarily be json data. It can be anything. 
+Now when you invoke http://localhost:8090/mock/yet-to-code then the contents of "samples/some.json" file are read and returned. Note that the returned code may not necessarily be json data. It can be anything.
 
 Aqua searches for file in both:
 
@@ -521,32 +522,170 @@ Also, you can specify file path using both:
 - relative file syntax, and
 - absolute file path syntax
 
-If the file is not found then Aqua returns 400 status code. 
+If the file is not found then Aqua returns 400 status code.
 
 When using such mock stubs, you don't need to define any methods for your endpoints.
 
 ---
 
-### Q: Is there any support for creating CRUD api's out of the box?
+#### Q: Is there any support for creating CRUD api's out of the box?
+
+In order to improve developer productivity Aqua supports basic database operations. This functionality is tied to the popular GORM https://github.com/jinzhu/gorm project. Let us see how we can set this up, for a "user" table
+
+First, we define the model (as per GORM specs):
+
+```
+type User struct {
+	id       int `gorm:"primary_key"`
+	username string 
+	name     string
+}
+```
+
+Second, we add an endpoint of type CrudApi (instead of Post or Get etc)
+
+```
+type AutoService struct {
+	RestService
+	users  CrudApi
+}
+```
+
+Third, in the service method, we define the function to return a CrudApi struct address.
+
+```
+func (s *AutoService) Users() CrudApi {
+	return CrudApi {
+		Storage: cstr.Storage {
+			Engine: "mysql",
+			Conn: "your-connection-string-here"
+		},
+		Model: func() interface{} {
+			return &User{}
+		}
+	}
+}
+```
+
+Basically in the CrudApi struct we define the database to connect to, and the gorm model to use.
+
+Now let's test the readymade endpoints, by hitting:
+
+1. GET to http://localhost:8090/auto/users/123
+2. POST to http://localhost:8090/auto/users such that they body payload contains a json like:
+
+```
+{
+	id: 1234,
+	username: "jdoe",
+	name: "John Doe"
+}
+```
+
+Note: PUT and DELETE are TBD/pending at this time.
 
 ---
 
-### Q: CRUD works for RDBMS only or supports other NoSQL systems?
+#### Q: CRUD works for RDBMS only or supports NoSQL systems?
+
+
+Yes, talking to NoSQL systems is planned but not implemented yet.
 
 ---
 
-### Q: Can I do CRUD only or ad-hoc querying is also supported?
+#### Q: Can I do CRUD only or ad-hoc querying is also supported?
+
+
+Ad hoc querying is planned but not implemented yet.
 
 ---
 
-### Q: If I wanted to switch out gorm (default ORMapping tool used), and switch to a different one then can that be achieved?
+#### Q: If I wanted to switch out gorm (default ORMapping tool used), and switch to a different one then can that be achieved?
+
+Yes, this can be done. At this time however, natively, only GORM is supported.
 
 ---
 
-### Q: What are different return types allowed for methods in Aqua?
+#### Q: What are different return types allowed for methods in Aqua?
 
 ---
 
 
+#### Q: Is there any support to wrap or proxy to other/3rd party api calls using Aqua?
+
+There are a number of good reasons why you would want to wrap any existing Rest apis, say:
+
+- to enable caching 
+- to setup logging / monitoring 
+- to modify/manipulate responses or headers
+
+Aqua supports this using the "wrap" tag configuration
+
+```
+type WrapperService struct {
+	RestService
+	MyDoSomething  GetApi `wrap:"http://abc.com/do/someting" ttl:"25m"`
+}
+
+```
+[TBD]
+
+
+---
+
+#### Q: Can I manipulate the response headers or response body?
+
+You can add a header through a middleware. But this must be done before the call to next.ServeHTTP(..). Any header additions or response body modifications post this will have no effect.
+
+```
+func ModModify() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Custom-A", "a1") /* this works */
+			next.ServeHTTP(w, r)
+			w.Header().Set("X-Custom-B", "b1") /* no effect */
+		})
+	}
+}
+```
+
+
+To conditionally add headers or modify response basis the body, you need to use httptest.ResponseRecorder. There is already a built in middleware that gives this functionality - it is named ModRecorder(). Let us see how to use it, with a complete example.
+
+
+
+```
+func ModModify() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Custom-A", "a1")
+			next.ServeHTTP(w, r)
+			w.Header().Set("X-Custom-B", "b1")
+			w.Write([]byte("appending text to response body"))
+		})
+	}
+}
+```
+Now we add this to our server along with ModRecorder:
+
+```
+	s := aqua.NewRestServer()
+	s.AddModule("chg", ModModify())
+	s.AddModule("rec", aqua.ModRecorder())
+	s....
+	s.Run()
+```
+
+Now invoke both these middleware in your rest call.
+
+```
+	type HelloService struct {
+	aqua.RestService
+	world  aqua.GetApi `mods:"rec,chg"`
+}
+```
+This will first call ModRecorder middleware which will setup a httptest.ResponseRecorder and pass it on. The next middleware, ModModify can now change headers before and after the next.ServeHTTP call. It is also able to modify the response body now.
+
+---
 
 
