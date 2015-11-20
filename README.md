@@ -537,7 +537,7 @@ First, we define the model (as per GORM specs):
 ```
 type User struct {
 	id       int `gorm:"primary_key"`
-	username string 
+	username string
 	name     string
 }
 ```
@@ -556,10 +556,6 @@ Third, in the service method, we define the function to return a CrudApi struct 
 ```
 func (s *AutoService) Users() CrudApi {
 	return CrudApi {
-		Storage: cstr.Storage {
-			Engine: "mysql",
-			Conn: "your-connection-string-here"
-		},
 		Model: func() interface{} {
 			return &User{}
 		}
@@ -567,12 +563,12 @@ func (s *AutoService) Users() CrudApi {
 }
 ```
 
-Basically in the CrudApi struct we define the database to connect to, and the gorm model to use.
+Basically in the CrudApi struct we define the gorm model to use as an address to return in the Model() function.
 
-Now let's test the readymade endpoints, by hitting:
+Now let's test the ready-made endpoints, by hitting:
 
-1. GET to http://localhost:8090/auto/users/123
-2. POST to http://localhost:8090/auto/users such that they body payload contains a json like:
+- GET to http://localhost:8090/auto/users/123
+- POST to http://localhost:8090/auto/users such that they body payload contains a json like:
 
 ```
 {
@@ -582,7 +578,34 @@ Now let's test the readymade endpoints, by hitting:
 }
 ```
 
-Note: PUT and DELETE are TBD/pending at this time.
+- PUT to http://localhost:8090/auto/users/345 such that the body payload contains a json to update user with id 345
+
+```
+{
+	username: "jbrown",
+	name: "Jason Browne"
+}
+```
+- DELETE to http://localhost:8090/auto/users/567
+
+That's it. You write a function to return a CrudApi object and you get 4 CRUD methods out of the box.
+
+By default, AQUA uses the default master database (as specified in you yaml file). If you want to override it then you can do so easily, as shown below:
+
+```
+func (s *AutoService) Users() CrudApi {
+	return CrudApi {
+		Storage: cstr.Storage {
+			Engine: "mysql",
+			Conn: "your-connection-string-here"
+		},
+		Model: func() interface{} {
+			return &User{}
+		}
+	}
+}
+
+```
 
 ---
 
@@ -615,8 +638,8 @@ Yes, this can be done. At this time however, natively, only GORM is supported.
 
 There are a number of good reasons why you would want to wrap any existing Rest apis, say:
 
-- to enable caching 
-- to setup logging / monitoring 
+- to enable caching
+- to setup logging / monitoring
 - to modify/manipulate responses or headers
 
 Aqua supports this using the "wrap" tag configuration

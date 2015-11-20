@@ -123,6 +123,8 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 			// Validate crud struct fields
 			vals := reflect.ValueOf(svc).MethodByName(upFirstChar(field.Name)).Call([]reflect.Value{})
 			crud := vals[0].Interface().(CrudApi)
+
+			crud.useMasterIfMissing()
 			crud.validate()
 
 			var exec Invoker
@@ -143,13 +145,43 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 				}
 			}
 
-			// Setup POST endpoint and handler (for Create)
+			// Setup Create (post) endpoint
 			{
 				f = fix
 				exec = NewMethodInvoker(&crud, "Crud_Create")
 				ep := NewEndPoint(exec, f, "POST", me.mods, me.stores)
 				svcUrl := ep.setupMuxHandlers(me.mux)
 				svcId := fmt.Sprintf("%s:%s", "POST", svcUrl)
+				if _, found := me.apis[svcId]; found {
+					panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
+				} else {
+					me.apis[svcId] = ep
+				}
+			}
+
+			// Setup DELETE (delete) endpoint
+			{
+				f = fix
+				f.Url += "/{pkey}"
+				exec = NewMethodInvoker(&crud, "Crud_Delete")
+				ep := NewEndPoint(exec, f, "DELETE", me.mods, me.stores)
+				svcUrl := ep.setupMuxHandlers(me.mux)
+				svcId := fmt.Sprintf("%s:%s", "DELETE", svcUrl)
+				if _, found := me.apis[svcId]; found {
+					panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
+				} else {
+					me.apis[svcId] = ep
+				}
+			}
+
+			//Setup Update (put) endpoint
+			{
+				f = fix
+				f.Url += "/{pkey}"
+				exec = NewMethodInvoker(&crud, "Crud_Update")
+				ep := NewEndPoint(exec, f, "PUT", me.mods, me.stores)
+				svcUrl := ep.setupMuxHandlers(me.mux)
+				svcId := fmt.Sprintf("%s:%s", "PUT", svcUrl)
 				if _, found := me.apis[svcId]; found {
 					panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
 				} else {
