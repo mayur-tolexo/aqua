@@ -29,8 +29,8 @@ func writeOutput(w http.ResponseWriter, r *http.Request, signs []string, vals []
 
 func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.Value, pretty string) {
 
-	// Dereference a pointer to a struct
-	if strings.HasPrefix(sign, "*st:") {
+	// Dereference a pointer to a struct or slice
+	if strings.HasPrefix(sign, "*st:") || strings.HasPrefix(sign, "*sl:") {
 		o := val.Elem()
 		writeItem(w, r, getSignOfType(o.Type()), o, pretty)
 		return

@@ -2,6 +2,7 @@ package aqua
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/thejackrabbit/aero/db/cstr"
 	"github.com/thejackrabbit/aero/db/orm"
@@ -21,7 +22,8 @@ type DeleteApi struct{ Api }
 type CrudApi struct {
 	Api
 	cstr.Storage
-	Model func() interface{}
+	Model  func() interface{}
+	Models func() interface{}
 }
 
 // If DB infomraiton was not set by user, then try to use the master
@@ -101,4 +103,48 @@ func (c *CrudApi) Crud_Update(primKey string, j Jar) interface{} {
 	return map[string]interface{}{"success": 1}
 }
 
-// TODO: write test cases for CRUD methods
+func (c *CrudApi) Crud_FetchSql(j Jar) interface{} {
+	j.LoadVars()
+	a := c.Models()
+
+	dbo := orm.From(c.Storage.Engine, c.Storage.Conn)
+
+	if err := dbo.Debug().Model(c.Model()).Where(j.Body).Find(a).Error; err != nil {
+		return err
+	}
+	return a
+}
+
+func (c *CrudApi) Crud_FetchSqlJson(j Jar) interface{} {
+	j.LoadVars()
+
+	var data map[string]interface{}
+	err := json.Unmarshal([]byte(j.Body), &data)
+	if err != nil {
+		return err
+	}
+
+	where, ok := data["where"]
+	if !ok {
+		return errors.New("where clause not specified")
+	}
+
+	p := make([]interface{}, 0)
+	params, ok := data["params"]
+	if ok {
+		p, ok = params.([]interface{})
+		if !ok {
+			return errors.New("params must be an array")
+		}
+	}
+
+	a := c.Models()
+	dbo := orm.From(c.Storage.Engine, c.Storage.Conn)
+
+	if err := dbo.Debug().Model(c.Model()).Where(where, p...).Find(a).Error; err != nil {
+		return err
+	}
+	return a
+}
+
+// TODO: write test cases for CRUD and fetch methods
