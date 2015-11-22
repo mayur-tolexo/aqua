@@ -39,6 +39,10 @@ func (c *CrudApi) validate() {
 	panik.If(c.Model == nil, "Model not specified")
 	panik.If(c.Model() == nil, "Model method returns nil")
 	panik.If(!strings.HasPrefix(getSignOfObject(c.Model()), "*st:"), "Model() method must return address of a gorm struct")
+
+	if c.Models != nil {
+		panik.If(!strings.HasPrefix(getSignOfObject(c.Models()), "*sl:"), "Models() method must return address of a gorm struct")
+	}
 }
 
 func (c *CrudApi) Crud_Read(primKey string) interface{} {

@@ -30,7 +30,7 @@ Golang Restful APIs in a cup, and ready to serve!
      - overriding for each endpoint specifically
 - Out-of-box support for common tasks like
   - Caching
-  - Database binding (for CRUD operations) *|pending*
+  - Database binding (for CRUD operations and limited ad-hoc querying)
   - Working with Queues *|pending*
   - Proxying or Wrapping around existing APIs *|pending*
   - Stubbing
@@ -609,23 +609,84 @@ func (s *AutoService) Users() CrudApi {
 
 ---
 
+#### Q: CRUD is all nice and cool, but having just that is very limiting. Does Aqua support ad-hoc querying?
+
+While fully generic ad-hoc querying (that may include joins over many tables) is not yet supported, AQUA does support limited querying to a specific model.
+
+In other words if your query is of this type, then you can run it out of box with AQUA.
+
+```
+SELECT * FROM <model_table> WHERE <conditions>
+```
+
+Continuing from the previous example, let us modify the CrudApi return to include Models() method:
+
+```
+func (s *AutoService) Users() CrudApi {
+	return CrudApi {
+		Model: func() interface{} {
+			return &User{}
+		}
+		// Add "Models" to return slice of your models
+		Models: func() interface{} {
+			return &[]User{}
+		}
+	}
+}
+```
+This will give you two additional endpoints:
+
+- POST @ http://localhost/auto/users/! 
+- POST @ http://localhost/auto/users/$
+
+Let us see each of these in detail.
+
+__POST @ http://localhost/auto/users/!__
+
+This endpoint takes SQL where cluase as Raw Body and returns a json array of matching users. So, we can the Body as:
+
+```
+id in (1,2,3,4,5) OR username like "j%"
+```
+
+When executed, the final query becomes:
+
+```
+SELECT * FROM users WHERE id in (1,2,3,4,5) OR username like "j%"
+```
+
+__POST @ http://localhost/auto/users/$__
+
+This endpoint takes parameterized inputs. You specify a json as Raw Body with "where" and "params" keys as shown below:
+
+```
+	{
+		"where" : "username like ? or name like ?",
+		"params" : [ "j%", "Tim%" ]
+	}
+```
+
+When executed, the final query becomes:
+
+```
+SELECT * FROM users WHERE username like "j%" or name like "Tim%"
+```
+
+The output is same, a json array.
+
+---
+
 #### Q: CRUD works for RDBMS only or supports NoSQL systems?
 
 
-Yes, talking to NoSQL systems is planned but not implemented yet.
+Talking to NoSQL systems is planned but not implemented yet.
 
 ---
 
-#### Q: Can I do CRUD only or ad-hoc querying is also supported?
-
-
-Ad hoc querying is planned but not implemented yet.
-
----
 
 #### Q: If I wanted to switch out gorm (default ORMapping tool used), and switch to a different one then can that be achieved?
 
-Yes, this can be done. At this time however, natively, only GORM is supported.
+Yes, this can be done. At this time however, only GORM is supported.
 
 ---
 
