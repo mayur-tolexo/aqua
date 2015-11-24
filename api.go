@@ -21,34 +21,38 @@ type DeleteApi struct{ Api }
 
 type CrudApi struct {
 	Api
-	cstr.Storage
-	Model  func() interface{}
-	Models func() interface{}
+	Engine string
+	Conn   string
+	Model  func() (interface{}, interface{})
 }
 
 // If DB infomraiton was not set by user, then try to use the master
 func (c *CrudApi) useMasterIfMissing() {
-	if c.Storage.Engine == "" && c.Storage.Conn == "" {
-		c.Storage = cstr.Get(true)
+	if c.Engine == "" && c.Conn == "" {
+		m := cstr.Get(true)
+		c.Engine = m.Engine
+		c.Conn = m.Conn
 	}
 }
 
 func (c *CrudApi) validate() {
-	panik.If(c.Storage.Engine == "", "Crud storage engine not specified")
-	panik.If(c.Storage.Conn == "", "Crud storage conn not spefieid")
+	panik.If(c.Engine == "", "Crud storage engine not specified")
+	panik.If(c.Conn == "", "Crud storage conn not spefieid")
 	panik.If(c.Model == nil, "Model not specified")
-	panik.If(c.Model() == nil, "Model method returns nil")
-	panik.If(!strings.HasPrefix(getSignOfObject(c.Model()), "*st:"), "Model() method must return address of a gorm struct")
 
-	if c.Models != nil {
-		panik.If(!strings.HasPrefix(getSignOfObject(c.Models()), "*sl:"), "Models() method must return address of a gorm struct")
+	m, arr := c.Model()
+	panik.If(m == nil, "Model method returns nil")
+	panik.If(!strings.HasPrefix(getSignOfObject(m), "*st:"), "Model() method param 1 must be address of a gorm struct")
+
+	if arr != nil {
+		panik.If(!strings.HasPrefix(getSignOfObject(arr), "*sl:"), "Model() method param 2 must be address of a slice of gorm struct")
 	}
 }
 
 func (c *CrudApi) Crud_Read(primKey string) interface{} {
-	m := c.Model()
+	m, _ := c.Model()
 
-	dbo := orm.From(c.Storage.Engine, c.Storage.Conn)
+	dbo := orm.From(c.Engine, c.Conn)
 
 	if err := dbo.Debug().First(m, primKey).Error; err != nil {
 		return err
@@ -59,7 +63,7 @@ func (c *CrudApi) Crud_Read(primKey string) interface{} {
 func (c *CrudApi) Crud_Create(j Jar) interface{} {
 	j.LoadVars()
 
-	m := c.Model()
+	m, _ := c.Model()
 	err := strukt.FromJson(m, j.Body)
 	if err != nil {
 		return err
@@ -77,9 +81,9 @@ func (c *CrudApi) Crud_Create(j Jar) interface{} {
 }
 
 func (c *CrudApi) Crud_Delete(primKey string) interface{} {
-	m := c.Model()
+	m, _ := c.Model()
 
-	dbo := orm.From(c.Storage.Engine, c.Storage.Conn)
+	dbo := orm.From(c.Engine, c.Conn)
 
 	if err := dbo.Debug().Where(primKey).Delete(m).Error; err != nil {
 		return err
@@ -97,9 +101,11 @@ func (c *CrudApi) Crud_Update(primKey string, j Jar) interface{} {
 		return err
 	}
 
-	dbo := orm.From(c.Storage.Engine, c.Storage.Conn)
+	dbo := orm.From(c.Engine, c.Conn)
 
-	if err := dbo.Debug().Model(c.Model()).Where(primKey).UpdateColumns(data).Error; err != nil {
+	m, _ := c.Model()
+
+	if err := dbo.Debug().Model(m).Where(primKey).UpdateColumns(data).Error; err != nil {
 		return err
 	}
 
@@ -108,14 +114,14 @@ func (c *CrudApi) Crud_Update(primKey string, j Jar) interface{} {
 
 func (c *CrudApi) Crud_FetchSql(j Jar) interface{} {
 	j.LoadVars()
-	a := c.Models()
+	m, col := c.Model()
 
-	dbo := orm.From(c.Storage.Engine, c.Storage.Conn)
+	dbo := orm.From(c.Engine, c.Conn)
 
-	if err := dbo.Debug().Model(c.Model()).Where(j.Body).Find(a).Error; err != nil {
+	if err := dbo.Debug().Model(m).Where(j.Body).Find(col).Error; err != nil {
 		return err
 	}
-	return a
+	return col
 }
 
 func (c *CrudApi) Crud_FetchSqlJson(j Jar) interface{} {
@@ -179,7 +185,7 @@ func (c *CrudApi) Crud_FetchSqlJson(j Jar) interface{} {
 		} else if sl, ok := order.([]interface{}); ok {
 			for _, v := range sl {
 				t, ok := v.(string)
-				if ok {
+				if !ok {
 					return errors.New("order must be string or array of string")
 				}
 				if ord == "" {
@@ -193,19 +199,19 @@ func (c *CrudApi) Crud_FetchSqlJson(j Jar) interface{} {
 		}
 	}
 
-	a := c.Models()
-	dbo := orm.From(c.Storage.Engine, c.Storage.Conn)
+	m, col := c.Model()
+	dbo := orm.From(c.Engine, c.Conn)
 
-	if err := dbo.Debug().Model(c.Model()).
+	if err := dbo.Debug().Model(m).
 		Where(whr, p...).
 		Order(ord).
 		Limit(lim).
 		Offset(off).
-		Find(a).Error; err != nil {
+		Find(col).Error; err != nil {
 		return err
 	}
 
-	return a
+	return col
 }
 
 // TODO: write test cases for CRUD and fetch methods

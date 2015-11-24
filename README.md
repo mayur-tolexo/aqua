@@ -556,8 +556,8 @@ Third, in the service method, we define the function to return a CrudApi struct 
 ```
 func (s *AutoService) Users() CrudApi {
 	return CrudApi {
-		Model: func() interface{} {
-			return &User{}
+		Model: func() (interface{}, interface{}) {
+			return &User{}, nil
 		}
 	}
 }
@@ -595,12 +595,10 @@ By default, AQUA uses the default master database (as specified in you yaml file
 ```
 func (s *AutoService) Users() CrudApi {
 	return CrudApi {
-		Storage: cstr.Storage {
-			Engine: "mysql",
-			Conn: "your-connection-string-here"
-		},
-		Model: func() interface{} {
-			return &User{}
+		Engine: "mysql",
+		Conn: "your-connection-string",
+		Model: func() (interface{}, interface{}) {
+			return &User{}, nil
 		}
 	}
 }
@@ -624,12 +622,9 @@ Continuing from the previous example, let us modify the CrudApi return to includ
 ```
 func (s *AutoService) Users() CrudApi {
 	return CrudApi {
-		Model: func() interface{} {
-			return &User{}
-		}
-		// Add "Models" to return slice of your models
-		Models: func() interface{} {
-			return &[]User{}
+		// Add 2nd return (slice of your models)
+		Model: func() (interface{}, interface{}) {
+			return &User{}, &[]User{}
 		}
 	}
 }

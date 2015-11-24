@@ -193,7 +193,8 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 			}
 
 			// Setup additional POST handler for ad-hoc queries
-			if crud.Models() != nil {
+			_, col := crud.Model()
+			if col != nil {
 				// POST endpoint /[]
 				// SQL is found in Post body
 				{
