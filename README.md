@@ -609,7 +609,7 @@ func (s *AutoService) Users() CrudApi {
 
 ---
 
-#### Q: CRUD is all nice and cool, but having just that is very limiting. Does Aqua support ad-hoc querying?
+#### Q: CRUD is nice but also limiting. Does Aqua support ad-hoc querying?
 
 While fully generic ad-hoc querying (that may include joins over many tables) is not yet supported, AQUA does support limited querying to a specific model.
 
@@ -661,15 +661,18 @@ This endpoint takes parameterized inputs. You specify a json as Raw Body with "w
 
 ```
 	{
-		"where" : "username like ? or name like ?",
-		"params" : [ "j%", "Tim%" ]
+		"where"  : "username like ? or name like ?",
+		"params" : [ "j%", "Tim%" ],
+		"limit"  : 100,
+		"offset" : 25,
+		"order"  " ["username", "name desc"]
 	}
 ```
 
 When executed, the final query becomes:
 
 ```
-SELECT * FROM users WHERE username like "j%" or name like "Tim%"
+SELECT * FROM users WHERE username like "j%" or name like "Tim%" order by username, name desc limit 100 offset 25
 ```
 
 The output is same, a json array.

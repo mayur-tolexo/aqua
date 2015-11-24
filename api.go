@@ -3,11 +3,11 @@ package aqua
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/thejackrabbit/aero/db/cstr"
 	"github.com/thejackrabbit/aero/db/orm"
 	"github.com/thejackrabbit/aero/panik"
 	"github.com/thejackrabbit/aero/strukt"
+	"strconv"
 	"strings"
 )
 
@@ -100,7 +100,6 @@ func (c *CrudApi) Crud_Update(primKey string, j Jar) interface{} {
 	dbo := orm.From(c.Storage.Engine, c.Storage.Conn)
 
 	if err := dbo.Debug().Model(c.Model()).Where(primKey).UpdateColumns(data).Error; err != nil {
-		fmt.Println("2b")
 		return err
 	}
 
@@ -128,9 +127,13 @@ func (c *CrudApi) Crud_FetchSqlJson(j Jar) interface{} {
 		return err
 	}
 
+	whr := ""
 	where, ok := data["where"]
-	if !ok {
-		return errors.New("where clause not specified")
+	if ok {
+		w, ok := where.(string)
+		if ok {
+			whr = w
+		}
 	}
 
 	p := make([]interface{}, 0)
@@ -142,12 +145,66 @@ func (c *CrudApi) Crud_FetchSqlJson(j Jar) interface{} {
 		}
 	}
 
+	// if limit is not specified then set it to ""
+	lim := ""
+	limit, ok := data["limit"]
+	if ok {
+		f, ok := limit.(float64)
+		if !ok {
+			return errors.New("limit must be integer")
+		} else {
+			lim = strconv.Itoa(int(f))
+		}
+	}
+
+	// if offset is not specified then set it to ""
+	off := ""
+	offset, ok := data["offset"]
+	if ok {
+		f, ok := offset.(float64)
+		if !ok {
+			return errors.New("offset must be integer")
+		} else {
+			off = strconv.Itoa(int(f))
+		}
+	}
+
+	// if order by is string or array (of string), then use it
+	ord := ""
+	order, ok := data["order"]
+	if ok {
+		s, ok := order.(string)
+		if ok {
+			ord = s
+		} else if sl, ok := order.([]interface{}); ok {
+			for _, v := range sl {
+				t, ok := v.(string)
+				if ok {
+					return errors.New("order must be string or array of string")
+				}
+				if ord == "" {
+					ord = t
+				} else {
+					ord += "," + t
+				}
+			}
+		} else {
+			return errors.New("order must be string or array of string")
+		}
+	}
+
 	a := c.Models()
 	dbo := orm.From(c.Storage.Engine, c.Storage.Conn)
 
-	if err := dbo.Debug().Model(c.Model()).Where(where, p...).Find(a).Error; err != nil {
+	if err := dbo.Debug().Model(c.Model()).
+		Where(whr, p...).
+		Order(ord).
+		Limit(lim).
+		Offset(off).
+		Find(a).Error; err != nil {
 		return err
 	}
+
 	return a
 }
 

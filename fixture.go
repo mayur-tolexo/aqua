@@ -13,6 +13,7 @@ type Fixture struct {
 	Vendor  string
 	Modules string
 	Stub    string
+	Wrap    string
 
 	Cache string // cache store
 	Ttl   string // cache ttl
@@ -75,6 +76,11 @@ func NewFixtureFromTag(i interface{}, fieldName string) Fixture {
 		out.Stub = tmp
 	}
 
+	tmp = getTagValue(tag, "wrap")
+	if tmp != "" {
+		out.Wrap = tmp
+	}
+
 	return out
 }
 
@@ -122,6 +128,9 @@ func resolveInOrder(e ...Fixture) Fixture {
 		}
 		if out.Stub == empty && ep.Stub != empty {
 			out.Stub = ep.Stub
+		}
+		if out.Wrap == empty && ep.Wrap != empty {
+			out.Wrap = ep.Wrap
 		}
 	}
 	return out
