@@ -3,12 +3,14 @@ package aqua
 import (
 	"encoding/json"
 	"errors"
+	"github.com/thejackrabbit/aero/cache"
 	"github.com/thejackrabbit/aero/db/cstr"
 	"github.com/thejackrabbit/aero/db/orm"
 	"github.com/thejackrabbit/aero/panik"
 	"github.com/thejackrabbit/aero/strukt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Api struct{ Fixture }
@@ -38,18 +40,51 @@ func (c *CrudApi) useMasterIfMissing() {
 func (c *CrudApi) validate() {
 	panik.If(c.Engine == "", "Crud storage engine not specified")
 	panik.If(c.Conn == "", "Crud storage conn not spefieid")
-	panik.If(c.Model == nil, "Model not specified")
 
-	m, arr := c.Model()
-	panik.If(m == nil, "Model method returns nil")
-	panik.If(!strings.HasPrefix(getSignOfObject(m), "*st:"), "Model() method param 1 must be address of a gorm struct")
+	if c.getMethod("create") == "Rdbms_Create" {
+		panik.If(c.Model == nil, "Model not specified")
 
-	if arr != nil {
-		panik.If(!strings.HasPrefix(getSignOfObject(arr), "*sl:"), "Model() method param 2 must be address of a slice of gorm struct")
+		m, arr := c.Model()
+		panik.If(m == nil, "Model method returns nil")
+		panik.If(!strings.HasPrefix(getSignOfObject(m), "*st:"), "Model() method param 1 must be address of a gorm struct")
+		if arr != nil {
+			panik.If(!strings.HasPrefix(getSignOfObject(arr), "*sl:"), "Model() method param 2 must be address of a slice of gorm struct")
+		}
 	}
 }
 
-func (c *CrudApi) Crud_Read(primKey string) interface{} {
+func (c *CrudApi) getMethod(action string) string {
+
+	switch c.Engine {
+	case "mysql", "maria", "mariadb", "postgres", "sqlite3":
+		switch action {
+		case "create":
+			return "Rdbms_Create"
+		case "read":
+			return "Rdbms_Read"
+		case "update":
+			return "Rdbms_Update"
+		case "delete":
+			return "Rdbms_Delete"
+		case "sql":
+			return "Rdbms_FetchSql"
+		case "sqlJson":
+			return "Rdbms_FetchSqlJson"
+		}
+
+	case "memcache":
+		switch action {
+		case "read":
+			return "Memcache_Read"
+		case "update":
+			return "Memcache_Update"
+		}
+	}
+
+	return ""
+}
+
+func (c *CrudApi) Rdbms_Read(primKey string) interface{} {
 	m, _ := c.Model()
 
 	dbo := orm.From(c.Engine, c.Conn)
@@ -60,7 +95,7 @@ func (c *CrudApi) Crud_Read(primKey string) interface{} {
 	return m
 }
 
-func (c *CrudApi) Crud_Create(j Jar) interface{} {
+func (c *CrudApi) Rdbms_Create(j Jar) interface{} {
 	j.LoadVars()
 
 	m, _ := c.Model()
@@ -80,7 +115,7 @@ func (c *CrudApi) Crud_Create(j Jar) interface{} {
 	return map[string]interface{}{"rows_affected": stmt.RowsAffected, "success": 1}
 }
 
-func (c *CrudApi) Crud_Delete(primKey string) interface{} {
+func (c *CrudApi) Rdbms_Delete(primKey string) interface{} {
 	m, _ := c.Model()
 
 	dbo := orm.From(c.Engine, c.Conn)
@@ -92,7 +127,7 @@ func (c *CrudApi) Crud_Delete(primKey string) interface{} {
 	return map[string]interface{}{"success": 1}
 }
 
-func (c *CrudApi) Crud_Update(primKey string, j Jar) interface{} {
+func (c *CrudApi) Rdbms_Update(primKey string, j Jar) interface{} {
 	j.LoadVars()
 
 	var data map[string]interface{}
@@ -112,7 +147,7 @@ func (c *CrudApi) Crud_Update(primKey string, j Jar) interface{} {
 	return map[string]interface{}{"success": 1}
 }
 
-func (c *CrudApi) Crud_FetchSql(j Jar) interface{} {
+func (c *CrudApi) Rdbms_FetchSql(j Jar) interface{} {
 	j.LoadVars()
 	m, col := c.Model()
 
@@ -124,7 +159,7 @@ func (c *CrudApi) Crud_FetchSql(j Jar) interface{} {
 	return col
 }
 
-func (c *CrudApi) Crud_FetchSqlJson(j Jar) interface{} {
+func (c *CrudApi) Rdbms_FetchSqlJson(j Jar) interface{} {
 	j.LoadVars()
 
 	var data map[string]interface{}
@@ -212,6 +247,42 @@ func (c *CrudApi) Crud_FetchSqlJson(j Jar) interface{} {
 	}
 
 	return col
+}
+
+func (c *CrudApi) Memcache_Read(primKey string) interface{} {
+
+	// Memcache object
+	spl := strings.Split(c.Conn, ":")
+	host := spl[0]
+	port, err := strconv.Atoi(spl[1])
+	panik.On(err)
+	memc := cache.NewMemcache(host, port)
+
+	data, err := memc.Get(primKey)
+	if err == nil {
+		return string(data)
+	} else {
+		return err
+	}
+}
+
+func (c *CrudApi) Memcache_Update(primKey string, j Jar) interface{} {
+
+	// Memcache object
+	spl := strings.Split(c.Conn, ":")
+	host := spl[0]
+	port, err := strconv.Atoi(spl[1])
+	panik.On(err)
+	memc := cache.NewMemcache(host, port)
+
+	ttl, err := time.ParseDuration(c.Ttl)
+	panik.On(err)
+	panik.If(ttl == 0, "ttl cache duration should not be 0")
+
+	j.LoadVars()
+	memc.Set(primKey, []byte(j.Body), ttl)
+
+	return ""
 }
 
 // TODO: write test cases for CRUD and fetch methods

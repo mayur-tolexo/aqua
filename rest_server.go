@@ -126,6 +126,7 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 
 			crud.useMasterIfMissing()
 			crud.validate()
+			crud.Fixture = fix
 
 			var exec Invoker
 			var f Fixture
@@ -134,73 +135,27 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 			{
 				f = fix
 				f.Url += "/{pkey}"
-				exec = NewMethodInvoker(&crud, "Crud_Read")
-				ep := NewEndPoint(exec, f, "GET", me.mods, me.stores)
-				svcUrl := ep.setupMuxHandlers(me.mux)
-				svcId := fmt.Sprintf("%s:%s", "GET", svcUrl)
-				if _, found := me.apis[svcId]; found {
-					panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
-				} else {
-					me.apis[svcId] = ep
+				meth := crud.getMethod("read")
+				if meth != "" {
+					exec = NewMethodInvoker(&crud, meth)
+					ep := NewEndPoint(exec, f, "GET", me.mods, me.stores)
+					svcUrl := ep.setupMuxHandlers(me.mux)
+					svcId := fmt.Sprintf("%s:%s", "GET", svcUrl)
+					if _, found := me.apis[svcId]; found {
+						panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
+					} else {
+						me.apis[svcId] = ep
+					}
+
 				}
 			}
-
-			// After the GET calls, set the ttls to 0
-			fix.Ttl = ""
 
 			// Setup Create (post) endpoint
 			{
 				f = fix
-				exec = NewMethodInvoker(&crud, "Crud_Create")
-				ep := NewEndPoint(exec, f, "POST", me.mods, me.stores)
-				svcUrl := ep.setupMuxHandlers(me.mux)
-				svcId := fmt.Sprintf("%s:%s", "POST", svcUrl)
-				if _, found := me.apis[svcId]; found {
-					panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
-				} else {
-					me.apis[svcId] = ep
-				}
-			}
-
-			// Setup DELETE (delete) endpoint
-			{
-				f = fix
-				f.Url += "/{pkey}"
-				exec = NewMethodInvoker(&crud, "Crud_Delete")
-				ep := NewEndPoint(exec, f, "DELETE", me.mods, me.stores)
-				svcUrl := ep.setupMuxHandlers(me.mux)
-				svcId := fmt.Sprintf("%s:%s", "DELETE", svcUrl)
-				if _, found := me.apis[svcId]; found {
-					panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
-				} else {
-					me.apis[svcId] = ep
-				}
-			}
-
-			//Setup Update (put) endpoint
-			{
-				f = fix
-				f.Url += "/{pkey}"
-				exec = NewMethodInvoker(&crud, "Crud_Update")
-				ep := NewEndPoint(exec, f, "PUT", me.mods, me.stores)
-				svcUrl := ep.setupMuxHandlers(me.mux)
-				svcId := fmt.Sprintf("%s:%s", "PUT", svcUrl)
-				if _, found := me.apis[svcId]; found {
-					panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
-				} else {
-					me.apis[svcId] = ep
-				}
-			}
-
-			// Setup additional POST handler for ad-hoc queries
-			_, col := crud.Model()
-			if col != nil {
-				// POST endpoint /[]
-				// SQL is found in Post body
-				{
-					f = fix
-					f.Url += "/!"
-					exec = NewMethodInvoker(&crud, "Crud_FetchSql")
+				meth := crud.getMethod("create")
+				if meth != "" {
+					exec = NewMethodInvoker(&crud, meth)
 					ep := NewEndPoint(exec, f, "POST", me.mods, me.stores)
 					svcUrl := ep.setupMuxHandlers(me.mux)
 					svcId := fmt.Sprintf("%s:%s", "POST", svcUrl)
@@ -210,20 +165,88 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 						me.apis[svcId] = ep
 					}
 				}
+			}
+
+			// Setup DELETE (delete) endpoint
+			{
+				f = fix
+				f.Url += "/{pkey}"
+				meth := crud.getMethod("delete")
+				if meth != "" {
+					exec = NewMethodInvoker(&crud, meth)
+					ep := NewEndPoint(exec, f, "DELETE", me.mods, me.stores)
+					svcUrl := ep.setupMuxHandlers(me.mux)
+					svcId := fmt.Sprintf("%s:%s", "DELETE", svcUrl)
+					if _, found := me.apis[svcId]; found {
+						panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
+					} else {
+						me.apis[svcId] = ep
+					}
+				}
+			}
+
+			//Setup Update (put) endpoint
+			{
+				f = fix
+				f.Url += "/{pkey}"
+				meth := crud.getMethod("update")
+				if meth != "" {
+					exec = NewMethodInvoker(&crud, meth)
+					ep := NewEndPoint(exec, f, "PUT", me.mods, me.stores)
+					svcUrl := ep.setupMuxHandlers(me.mux)
+					svcId := fmt.Sprintf("%s:%s", "PUT", svcUrl)
+					if _, found := me.apis[svcId]; found {
+						panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
+					} else {
+						me.apis[svcId] = ep
+					}
+				}
+			}
+
+			// Setup additional POST handler for ad-hoc queries
+			fn := crud.Model
+			var col interface{}
+			if fn != nil {
+				_, col = crud.Model()
+			}
+
+			if col != nil {
+
+				// POST endpoint /[]
+				// SQL is found in Post body
+				{
+					f = fix
+					f.Url += "/!"
+					meth := crud.getMethod("sql")
+					if meth != "" {
+						exec = NewMethodInvoker(&crud, meth)
+						ep := NewEndPoint(exec, f, "POST", me.mods, me.stores)
+						svcUrl := ep.setupMuxHandlers(me.mux)
+						svcId := fmt.Sprintf("%s:%s", "POST", svcUrl)
+						if _, found := me.apis[svcId]; found {
+							panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
+						} else {
+							me.apis[svcId] = ep
+						}
+					}
+				}
 
 				// POST endpoint /$
 				// SQL and params are found in Post body in json form
 				{
 					f = fix
 					f.Url += "/$"
-					exec = NewMethodInvoker(&crud, "Crud_FetchSqlJson")
-					ep := NewEndPoint(exec, f, "POST", me.mods, me.stores)
-					svcUrl := ep.setupMuxHandlers(me.mux)
-					svcId := fmt.Sprintf("%s:%s", "POST", svcUrl)
-					if _, found := me.apis[svcId]; found {
-						panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
-					} else {
-						me.apis[svcId] = ep
+					meth := crud.getMethod("sqlJson")
+					if meth != "" {
+						exec = NewMethodInvoker(&crud, meth)
+						ep := NewEndPoint(exec, f, "POST", me.mods, me.stores)
+						svcUrl := ep.setupMuxHandlers(me.mux)
+						svcId := fmt.Sprintf("%s:%s", "POST", svcUrl)
+						if _, found := me.apis[svcId]; found {
+							panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
+						} else {
+							me.apis[svcId] = ep
+						}
 					}
 				}
 			}
