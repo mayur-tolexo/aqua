@@ -3,7 +3,7 @@ Golang Restful APIs in a cup, and ready to serve!
 
 ## Inspiration
 - Go-Rest framework for service controllers and tag-based configurations
-- Apache and IIS WebServers for hierarchical configuration model
+- Popular WebServers (like Apache,IIS) for hierarchical configuration model
 
 ## Design Goals
 
@@ -18,24 +18,26 @@ Golang Restful APIs in a cup, and ready to serve!
 
 ## Features
 
-- Aqua uses service controllers to define related endpoints. This makes code modular and organized
-- Using Aqua, you can define configurations at 4 levels:
+- Service Controllers to define endpoints (modular and organized code)
+- Powerful Configuration Model. Supports 4 levels:
   1. at server level, programmatically (these are inherited by all endpoints)
   2. at service controller level, declaratively using golang tags (these are inherited by all contained apis)
   3. at service controller level, programmatically
   4. at api or endpoint level, declaratively (these override inherited configurations)
-- You can declaratively specify the version
+- Versioning
   - Multiple versions are supported easily by
      - defining at service controller level (inherited by all internal endpoints)
      - overriding for each endpoint specifically
-- Out-of-box support for common tasks like
-  - Caching
-  - Database binding (for CRUD operations and limited ad-hoc querying)
-  - Working with Queues *|pending*
-  - Proxying or Wrapping around existing APIs *|pending*
-  - Stubbing
-     - If there are code/project dependencies on your api service, you can simply write a stub (sample output) in an external file and publish this mock api quickly before writing actual business logic
-- You can define modules (middleware) at a project level and then apply them to any service using Aqua's powerful configuration model
+- Caching
+- Database Binding
+ -  CRUD endpoints
+ -  Limited ad-hoc querying
+- Stubbing
+ - If there are code/project dependencies on your api service, you can simply write a stub (sample output) in an external file and publish this mock api quickly before writing actual business logic
+- Working with Queues *|pending*
+- Proxying or Wrapping around existing APIs *|pending*
+- Middleware support (by defining modules)
+- Logging (using middleware)
 
 ##Lets explore these features
 
@@ -688,10 +690,6 @@ Yes, this can be done. At this time however, only GORM is supported.
 
 ---
 
-#### Q: What are different return types allowed for methods in Aqua?
-
----
-
 
 #### Q: Is there any support to wrap or proxy to other/3rd party api calls using Aqua?
 
@@ -769,5 +767,12 @@ Now invoke both these middleware in your rest call.
 This will first call ModRecorder middleware which will setup a httptest.ResponseRecorder and pass it on. The next middleware, ModModify can now change headers before and after the next.ServeHTTP call. It is also able to modify the response body now.
 
 ---
+
+
+#### Q: Lot of the examples on this page use "string" as the return type for method implementations. Are there other data types allowed?
+
+---
+
+#### Q: I would like to run some cron jobs. I could write a separate application and run it through crontab. Or I could invoke a separate Aqua service through a "curl" call.
 
 
