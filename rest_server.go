@@ -139,14 +139,8 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 				if meth != "" {
 					exec = NewMethodInvoker(&crud, meth)
 					ep := NewEndPoint(exec, f, "GET", me.mods, me.stores)
-					svcUrl := ep.setupMuxHandlers(me.mux)
-					svcId := fmt.Sprintf("%s:%s", "GET", svcUrl)
-					if _, found := me.apis[svcId]; found {
-						panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
-					} else {
-						me.apis[svcId] = ep
-					}
-
+					ep.setupMuxHandlers(me.mux)
+					me.addServiceToList(ep)
 				}
 			}
 
@@ -157,13 +151,8 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 				if meth != "" {
 					exec = NewMethodInvoker(&crud, meth)
 					ep := NewEndPoint(exec, f, "POST", me.mods, me.stores)
-					svcUrl := ep.setupMuxHandlers(me.mux)
-					svcId := fmt.Sprintf("%s:%s", "POST", svcUrl)
-					if _, found := me.apis[svcId]; found {
-						panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
-					} else {
-						me.apis[svcId] = ep
-					}
+					ep.setupMuxHandlers(me.mux)
+					me.addServiceToList(ep)
 				}
 			}
 
@@ -175,13 +164,8 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 				if meth != "" {
 					exec = NewMethodInvoker(&crud, meth)
 					ep := NewEndPoint(exec, f, "DELETE", me.mods, me.stores)
-					svcUrl := ep.setupMuxHandlers(me.mux)
-					svcId := fmt.Sprintf("%s:%s", "DELETE", svcUrl)
-					if _, found := me.apis[svcId]; found {
-						panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
-					} else {
-						me.apis[svcId] = ep
-					}
+					ep.setupMuxHandlers(me.mux)
+					me.addServiceToList(ep)
 				}
 			}
 
@@ -193,13 +177,8 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 				if meth != "" {
 					exec = NewMethodInvoker(&crud, meth)
 					ep := NewEndPoint(exec, f, "PUT", me.mods, me.stores)
-					svcUrl := ep.setupMuxHandlers(me.mux)
-					svcId := fmt.Sprintf("%s:%s", "PUT", svcUrl)
-					if _, found := me.apis[svcId]; found {
-						panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
-					} else {
-						me.apis[svcId] = ep
-					}
+					ep.setupMuxHandlers(me.mux)
+					me.addServiceToList(ep)
 				}
 			}
 
@@ -221,13 +200,8 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 					if meth != "" {
 						exec = NewMethodInvoker(&crud, meth)
 						ep := NewEndPoint(exec, f, "POST", me.mods, me.stores)
-						svcUrl := ep.setupMuxHandlers(me.mux)
-						svcId := fmt.Sprintf("%s:%s", "POST", svcUrl)
-						if _, found := me.apis[svcId]; found {
-							panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
-						} else {
-							me.apis[svcId] = ep
-						}
+						ep.setupMuxHandlers(me.mux)
+						me.addServiceToList(ep)
 					}
 				}
 
@@ -240,13 +214,8 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 					if meth != "" {
 						exec = NewMethodInvoker(&crud, meth)
 						ep := NewEndPoint(exec, f, "POST", me.mods, me.stores)
-						svcUrl := ep.setupMuxHandlers(me.mux)
-						svcId := fmt.Sprintf("%s:%s", "POST", svcUrl)
-						if _, found := me.apis[svcId]; found {
-							panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
-						} else {
-							me.apis[svcId] = ep
-						}
+						ep.setupMuxHandlers(me.mux)
+						me.addServiceToList(ep)
 					}
 				}
 			}
@@ -256,15 +225,18 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 			exec := NewMethodInvoker(svc, upFirstChar(field.Name))
 			if exec.exists || fix.Stub != "" {
 				ep := NewEndPoint(exec, fix, method, me.mods, me.stores)
-				svcUrl := ep.setupMuxHandlers(me.mux)
-				svcId := fmt.Sprintf("%s:%s", method, svcUrl)
-				if _, found := me.apis[svcId]; found {
-					panik.Do("Multiple services found in: %s on same URL %s", svcType, svcId)
-				} else {
-					me.apis[svcId] = ep
-				}
+				ep.setupMuxHandlers(me.mux)
+				me.addServiceToList(ep)
 			}
 		}
+	}
+}
+
+func (me *RestServer) addServiceToList(ep endPoint) {
+	if _, found := me.apis[ep.svcId]; found {
+		panik.Do("Multiple services found: %s", ep.svcId)
+	} else {
+		me.apis[ep.svcId] = ep
 	}
 }
 
