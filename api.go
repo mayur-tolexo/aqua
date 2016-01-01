@@ -257,8 +257,10 @@ func (c *CrudApi) Memcache_Read(primKey string) interface{} {
 	port, err := strconv.Atoi(spl[1])
 	panik.On(err)
 	memc := cache.NewMemcache(host, port)
+	defer memc.Close()
 
 	data, err := memc.Get(primKey)
+
 	if err == nil {
 		return string(data)
 	} else {
@@ -274,6 +276,7 @@ func (c *CrudApi) Memcache_Update(primKey string, j Jar) interface{} {
 	port, err := strconv.Atoi(spl[1])
 	panik.On(err)
 	memc := cache.NewMemcache(host, port)
+	defer memc.Close()
 
 	ttl, err := time.ParseDuration(c.Ttl)
 	panik.On(err)
