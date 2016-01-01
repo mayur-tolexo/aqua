@@ -27,6 +27,9 @@ type endPoint struct {
 	muxVars        []string
 	modules        []func(http.Handler) http.Handler
 	stash          cache.Cacher
+
+	svcUrl string
+	svcId  string
 }
 
 func NewEndPoint(inv Invoker, f Fixture, httpMethod string, mods map[string]func(http.Handler) http.Handler,
@@ -200,7 +203,10 @@ func (me *endPoint) setupMuxHandlers(mux *mux.Router) (svcUrl string) {
 		mux.Handle(me.urlWoVersion, m).Methods(me.httpMethod).Headers("Accept", header2)
 	}
 
-	return svcUrl
+	me.svcUrl = svcUrl
+	me.svcId = fmt.Sprintf("%s:%s", me.httpMethod, svcUrl)
+
+	return me.svcId
 }
 
 func handleIncoming(e *endPoint) func(http.ResponseWriter, *http.Request) {
