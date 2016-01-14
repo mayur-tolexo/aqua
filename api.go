@@ -41,7 +41,7 @@ func (c *CrudApi) validate() {
 	panik.If(c.Engine == "", "Crud storage engine not specified")
 	panik.If(c.Conn == "", "Crud storage conn not spefieid")
 
-	if c.getMethod("create") == "Rdbms_Create" {
+	if c.getMethod("create") == "Rdbms_Create" { // Model is a must
 		panik.If(c.Model == nil, "Model not specified")
 
 		m, arr := c.Model()
