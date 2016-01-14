@@ -13,10 +13,15 @@ type Fixture struct {
 	Vendor  string
 	Modules string
 	Stub    string
-	Wrap    string
+	Wrap    string // wrapper
 
-	Cache string // cache store
-	Ttl   string // cache ttl
+	// cache
+	Cache string
+	Ttl   string
+
+	// acl
+	Allow string
+	Deny  string
 }
 
 func NewFixtureFromTag(i interface{}, fieldName string) Fixture {
@@ -81,6 +86,16 @@ func NewFixtureFromTag(i interface{}, fieldName string) Fixture {
 		out.Wrap = tmp
 	}
 
+	tmp = getTagValue(tag, "allow")
+	if tmp != "" {
+		out.Allow = tmp
+	}
+
+	tmp = getTagValue(tag, "deny")
+	if tmp != "" {
+		out.Deny = tmp
+	}
+
 	return out
 }
 
@@ -131,6 +146,12 @@ func resolveInOrder(e ...Fixture) Fixture {
 		}
 		if out.Wrap == empty && ep.Wrap != empty {
 			out.Wrap = ep.Wrap
+		}
+		if out.Allow == empty && ep.Allow != empty {
+			out.Allow = ep.Allow
+		}
+		if out.Deny == empty && ep.Deny != empty {
+			out.Deny = ep.Deny
 		}
 	}
 	return out

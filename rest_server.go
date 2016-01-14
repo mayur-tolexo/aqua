@@ -11,6 +11,10 @@ import (
 	"time"
 )
 
+type Authorizer interface {
+	Authorize(r *http.Request, allow string, deny string) bool
+}
+
 var defaults Fixture = Fixture{
 	Root:    "",
 	Url:     "",
@@ -34,6 +38,7 @@ type RestServer struct {
 	apis   map[string]endPoint
 	mods   map[string]func(http.Handler) http.Handler
 	stores map[string]cache.Cacher
+	auth   Authorizer
 }
 
 func NewRestServer() RestServer {
@@ -63,6 +68,10 @@ func (me *RestServer) AddCache(name string, c cache.Cacher) {
 
 func (me *RestServer) AddService(svc interface{}) {
 	me.svcs = append(me.svcs, svc)
+}
+
+func (me *RestServer) SetAuth(a Authorizer) {
+	me.auth = a
 }
 
 func (me *RestServer) loadAllEndpoints() {
@@ -118,7 +127,7 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 		if method == "CRUD" {
 
 			// Validate crud method parameters (inputs and outputs)
-			NewEndPoint(NewMethodInvoker(svc, upFirstChar(field.Name)), fix, "CRUD", me.mods, me.stores)
+			NewEndPoint(NewMethodInvoker(svc, upFirstChar(field.Name)), fix, "CRUD", me.mods, me.stores, me.auth)
 
 			// Validate crud struct fields
 			vals := reflect.ValueOf(svc).MethodByName(upFirstChar(field.Name)).Call([]reflect.Value{})
@@ -138,7 +147,7 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 				meth := crud.getMethod("read")
 				if meth != "" {
 					exec = NewMethodInvoker(&crud, meth)
-					ep := NewEndPoint(exec, f, "GET", me.mods, me.stores)
+					ep := NewEndPoint(exec, f, "GET", me.mods, me.stores, me.auth)
 					ep.setupMuxHandlers(me.mux)
 					me.addServiceToList(ep)
 				}
@@ -150,7 +159,7 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 				meth := crud.getMethod("create")
 				if meth != "" {
 					exec = NewMethodInvoker(&crud, meth)
-					ep := NewEndPoint(exec, f, "POST", me.mods, me.stores)
+					ep := NewEndPoint(exec, f, "POST", me.mods, me.stores, me.auth)
 					ep.setupMuxHandlers(me.mux)
 					me.addServiceToList(ep)
 				}
@@ -163,7 +172,7 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 				meth := crud.getMethod("delete")
 				if meth != "" {
 					exec = NewMethodInvoker(&crud, meth)
-					ep := NewEndPoint(exec, f, "DELETE", me.mods, me.stores)
+					ep := NewEndPoint(exec, f, "DELETE", me.mods, me.stores, me.auth)
 					ep.setupMuxHandlers(me.mux)
 					me.addServiceToList(ep)
 				}
@@ -176,7 +185,7 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 				meth := crud.getMethod("update")
 				if meth != "" {
 					exec = NewMethodInvoker(&crud, meth)
-					ep := NewEndPoint(exec, f, "PUT", me.mods, me.stores)
+					ep := NewEndPoint(exec, f, "PUT", me.mods, me.stores, me.auth)
 					ep.setupMuxHandlers(me.mux)
 					me.addServiceToList(ep)
 				}
@@ -199,7 +208,7 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 					meth := crud.getMethod("sql")
 					if meth != "" {
 						exec = NewMethodInvoker(&crud, meth)
-						ep := NewEndPoint(exec, f, "POST", me.mods, me.stores)
+						ep := NewEndPoint(exec, f, "POST", me.mods, me.stores, me.auth)
 						ep.setupMuxHandlers(me.mux)
 						me.addServiceToList(ep)
 					}
@@ -213,7 +222,7 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 					meth := crud.getMethod("sqlJson")
 					if meth != "" {
 						exec = NewMethodInvoker(&crud, meth)
-						ep := NewEndPoint(exec, f, "POST", me.mods, me.stores)
+						ep := NewEndPoint(exec, f, "POST", me.mods, me.stores, me.auth)
 						ep.setupMuxHandlers(me.mux)
 						me.addServiceToList(ep)
 					}
@@ -224,7 +233,7 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 
 			exec := NewMethodInvoker(svc, upFirstChar(field.Name))
 			if exec.exists || fix.Stub != "" {
-				ep := NewEndPoint(exec, fix, method, me.mods, me.stores)
+				ep := NewEndPoint(exec, fix, method, me.mods, me.stores, me.auth)
 				ep.setupMuxHandlers(me.mux)
 				me.addServiceToList(ep)
 			}

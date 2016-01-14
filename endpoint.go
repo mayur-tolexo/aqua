@@ -27,13 +27,14 @@ type endPoint struct {
 	muxVars        []string
 	modules        []func(http.Handler) http.Handler
 	stash          cache.Cacher
+	auth           Authorizer
 
 	svcUrl string
 	svcId  string
 }
 
 func NewEndPoint(inv Invoker, f Fixture, httpMethod string, mods map[string]func(http.Handler) http.Handler,
-	caches map[string]cache.Cacher) endPoint {
+	caches map[string]cache.Cacher, a Authorizer) endPoint {
 
 	out := endPoint{
 		exec:           inv,
@@ -46,6 +47,7 @@ func NewEndPoint(inv Invoker, f Fixture, httpMethod string, mods map[string]func
 		httpMethod:     httpMethod,
 		modules:        make([]func(http.Handler) http.Handler, 0),
 		stash:          nil,
+		auth:           a,
 	}
 
 	// Perform all validations, unless it is a mock stub
@@ -225,6 +227,15 @@ func handleIncoming(e *endPoint) func(http.ResponseWriter, *http.Request) {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Authorization
+		if e.auth != nil {
+			if !e.auth.Authorize(r, e.config.Allow, e.config.Deny) {
+				w.WriteHeader(401)
+				w.Write([]byte(`{"message":"Unauthorized Access"}`))
+				return
+			}
+		}
 
 		// TODO: create less local variables
 		// TODO: move vars to closure level
