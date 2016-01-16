@@ -6,14 +6,24 @@ import (
 )
 
 type Fault struct {
-	message string
-	issue   error
+	httpCode int
+	message  string
+	issue    error
 }
 
 func NewFault(e error, msg string) Fault {
 	f := Fault{
 		message: msg,
 		issue:   e,
+	}
+	return f
+}
+
+func NewFaultWithCode(code int, e error, msg string) Fault {
+	f := Fault{
+		httpCode: code,
+		message:  msg,
+		issue:    e,
 	}
 	return f
 }

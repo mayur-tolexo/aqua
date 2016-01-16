@@ -47,17 +47,25 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 		s := val.Interface().(Sac)
 		writeItem(w, r, getSignOfObject(s.Data), reflect.ValueOf(s.Data), pretty)
 	case isError(val.Interface()):
-		f := NewFault(val.Interface().(error), "Oops! An error was encountered")
+		f := NewFault(val.Interface().(error), "Oops! An error occurred")
 		writeItem(w, r, getSignOfObject(f), reflect.ValueOf(f), pretty)
 	case sign == "st:github.com/thejackrabbit/aqua.Fault":
 		j, _ := strukt.ToBytesPretty(val.Interface(), pretty == "true" || pretty == "1")
-		switch r.Method {
-		case "GET":
-			w.WriteHeader(404)
-		case "POST":
-			w.WriteHeader(422)
-		default:
-			panik.Do("Status code missing for method %", r.Method)
+		f := val.Interface().(Fault)
+		if f.httpCode != 0 {
+			w.WriteHeader(f.httpCode)
+		} else {
+			// 417: Expectation failed
+			switch r.Method {
+			case "GET":
+				w.WriteHeader(404)
+			case "POST":
+				w.WriteHeader(417)
+			case "DELETE":
+				w.WriteHeader(417)
+			default:
+				panik.Do("Status code missing for method %", r.Method)
+			}
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Content-Length", strconv.Itoa(len(j)))

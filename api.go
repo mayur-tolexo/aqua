@@ -23,17 +23,14 @@ type DeleteApi struct{ Api }
 
 type CrudApi struct {
 	Api
-	Engine string
-	Conn   string
-	Model  func() (interface{}, interface{})
+	cstr.Storage
+	Model func() (interface{}, interface{})
 }
 
 // If DB infomraiton was not set by user, then try to use the master
 func (c *CrudApi) useMasterIfMissing() {
 	if c.Engine == "" && c.Conn == "" {
-		m := cstr.Get(true)
-		c.Engine = m.Engine
-		c.Conn = m.Conn
+		c.Storage = cstr.Get(true)
 	}
 }
 
@@ -78,6 +75,8 @@ func (c *CrudApi) getMethod(action string) string {
 			return "Memcache_Read"
 		case "update":
 			return "Memcache_Update"
+		case "delete":
+			return "Memcache_Delete"
 		}
 	}
 
@@ -286,6 +285,25 @@ func (c *CrudApi) Memcache_Update(primKey string, j Jar) interface{} {
 	memc.Set(primKey, []byte(j.Body), ttl)
 
 	return ""
+}
+
+func (c *CrudApi) Memcache_Delete(primKey string, j Jar) interface{} {
+
+	// Memcache object
+	spl := strings.Split(c.Conn, ":")
+	host := spl[0]
+	port, err := strconv.Atoi(spl[1])
+	panik.On(err)
+	memc := cache.NewMemcache(host, port)
+	defer memc.Close()
+
+	err = memc.Delete(primKey)
+
+	if err == nil {
+		return ""
+	} else {
+		return err
+	}
 }
 
 // TODO: write test cases for CRUD and fetch methods

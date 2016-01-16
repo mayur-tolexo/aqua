@@ -16,14 +16,8 @@ type Authorizer interface {
 }
 
 var defaults Fixture = Fixture{
-	Root:    "",
-	Url:     "",
-	Version: "",
-	Pretty:  "false",
-	Vendor:  "vnd.api",
-	Modules: "",
-	Cache:   "",
-	Ttl:     "",
+	Pretty: "false",
+	Vendor: "vnd.api",
 }
 
 var release string = "0.0.1"
@@ -113,9 +107,14 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 				tmp = tmp[0 : len(tmp)-len("Service")]
 			}
 			fix.Root = toUrlCase(tmp)
+		} else if fix.Root == "-" {
+			fix.Root = ""
 		}
+
 		if fix.Url == "" {
 			fix.Url = toUrlCase(field.Name)
+		} else if fix.Url == "-" {
+			fix.Url = ""
 		}
 
 		method = getHttpMethod(field)
@@ -277,16 +276,6 @@ func (me *RestServer) RunAsync() {
 	// TODO: don't sleep, check for the server to come up, and panic if
 	// it doesn't even after 5 sec
 	time.Sleep(time.Millisecond * 50)
-}
-
-// For backward compatibility
-func (me *RestServer) RunWith(port int, sync bool) {
-	me.Port = port
-	if sync {
-		me.Run()
-	} else {
-		me.RunAsync()
-	}
 }
 
 func startup(r *RestServer, port int) {
