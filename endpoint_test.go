@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
-	_ "github.com/thejackrabbit/aero/db/cstr"
+	"github.com/thejackrabbit/aero/db/cstr"
 	"net/http"
 	"testing"
 )
@@ -403,8 +403,10 @@ type crudOut1Service struct {
 func (s *crudOut1Service) OutMethod() CrudApi {
 	return CrudApi{
 		//Storage: cstr.Storage{Engine: "mysql", Conn: "blah"},
-		Engine: "mysql",
-		Conn:   "blah",
+		Storage: cstr.Storage{
+			Engine: "mysql",
+			Conn:   "blah",
+		},
 		Model: func() (interface{}, interface{}) {
 			return &someModel{}, nil
 		},

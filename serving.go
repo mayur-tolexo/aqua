@@ -2,8 +2,8 @@ package aqua
 
 import (
 	"fmt"
+	"github.com/thejackrabbit/aero/ds"
 	"github.com/thejackrabbit/aero/panik"
-	"github.com/thejackrabbit/aero/strukt"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -50,7 +50,7 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 		f := NewFault(val.Interface().(error), "Oops! An error occurred")
 		writeItem(w, r, getSignOfObject(f), reflect.ValueOf(f), pretty)
 	case sign == "st:github.com/thejackrabbit/aqua.Fault":
-		j, _ := strukt.ToBytesPretty(val.Interface(), pretty == "true" || pretty == "1")
+		j, _ := ds.ToBytes(val.Interface(), pretty == "true" || pretty == "1")
 		f := val.Interface().(Fault)
 		if f.httpCode != 0 {
 			w.WriteHeader(f.httpCode)
@@ -71,17 +71,17 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
 		w.Write(j)
 	case sign == "map":
-		j, _ := strukt.ToBytesPretty(val.Interface(), pretty == "true" || pretty == "1")
+		j, _ := ds.ToBytes(val.Interface(), pretty == "true" || pretty == "1")
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
 		w.Write(j)
 	case strings.HasPrefix(sign, "st:"):
-		j, _ := strukt.ToBytesPretty(val.Interface(), pretty == "true" || pretty == "1")
+		j, _ := ds.ToBytes(val.Interface(), pretty == "true" || pretty == "1")
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
 		w.Write(j)
 	case strings.HasPrefix(sign, "sl:"), strings.HasPrefix(sign, "ar:"):
-		j, _ := strukt.ToBytesPretty(val.Interface(), pretty == "true" || pretty == "1")
+		j, _ := ds.ToBytes(val.Interface(), pretty == "true" || pretty == "1")
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
 		w.Write(j)

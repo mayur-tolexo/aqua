@@ -3,11 +3,11 @@ package aqua
 import (
 	"encoding/json"
 	"errors"
-	"github.com/thejackrabbit/aero/cache"
 	"github.com/thejackrabbit/aero/db/cstr"
 	"github.com/thejackrabbit/aero/db/orm"
+	"github.com/thejackrabbit/aero/ds"
+	"github.com/thejackrabbit/aero/engine"
 	"github.com/thejackrabbit/aero/panik"
-	"github.com/thejackrabbit/aero/strukt"
 	"strconv"
 	"strings"
 	"time"
@@ -98,7 +98,8 @@ func (c *CrudApi) Rdbms_Create(j Jar) interface{} {
 	j.LoadVars()
 
 	m, _ := c.Model()
-	err := strukt.FromJson(m, j.Body)
+	//err := ds.LoadStruct(m, []byte(j.Body))
+	err := ds.Load(m, []byte(j.Body))
 	if err != nil {
 		return err
 	}
@@ -255,7 +256,7 @@ func (c *CrudApi) Memcache_Read(primKey string) interface{} {
 	host := spl[0]
 	port, err := strconv.Atoi(spl[1])
 	panik.On(err)
-	memc := cache.NewMemcache(host, port)
+	memc := engine.NewMemcache(host, port)
 	defer memc.Close()
 
 	data, err := memc.Get(primKey)
@@ -274,7 +275,7 @@ func (c *CrudApi) Memcache_Update(primKey string, j Jar) interface{} {
 	host := spl[0]
 	port, err := strconv.Atoi(spl[1])
 	panik.On(err)
-	memc := cache.NewMemcache(host, port)
+	memc := engine.NewMemcache(host, port)
 	defer memc.Close()
 
 	ttl, err := time.ParseDuration(c.Ttl)
@@ -294,7 +295,7 @@ func (c *CrudApi) Memcache_Delete(primKey string, j Jar) interface{} {
 	host := spl[0]
 	port, err := strconv.Atoi(spl[1])
 	panik.On(err)
-	memc := cache.NewMemcache(host, port)
+	memc := engine.NewMemcache(host, port)
 	defer memc.Close()
 
 	err = memc.Delete(primKey)
