@@ -3,13 +3,13 @@ package aqua
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/mgutz/logxi/v1"
+	// "github.com/mgutz/logxi/v1"
 	"github.com/thejackrabbit/aero/panik"
 	"reflect"
 	"strings"
 )
 
-var logEnc = log.New("enc")
+// var logEnc = log.New("enc")
 
 func encode(r []reflect.Value, typ []string) []byte {
 
