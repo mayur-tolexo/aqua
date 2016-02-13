@@ -87,7 +87,7 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 		w.Write(j)
 	case sign == "i:.":
 		writeItem(w, r, getSignOfObject(val.Interface()), val, pretty)
-		fmt.Println("interface{} resolves to:", getSignOfObject(val.Interface()))
+		// fmt.Println("interface{} resolves to:", getSignOfObject(val.Interface()))
 		//TODO: error handling in case the returned object is an error
 		//TODO: along with int, xx, also support xx, error as a function
 	default:
