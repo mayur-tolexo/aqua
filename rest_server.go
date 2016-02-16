@@ -2,13 +2,15 @@ package aqua
 
 import (
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/thejackrabbit/aero/cache"
-	"github.com/thejackrabbit/aero/panik"
 	"net/http"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/thejackrabbit/aero/cache"
+	"github.com/thejackrabbit/aero/panik"
+	"github.com/thejackrabbit/aero/str"
 )
 
 type Authorizer interface {
@@ -106,13 +108,13 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 			if strings.HasSuffix(tmp, "Service") {
 				tmp = tmp[0 : len(tmp)-len("Service")]
 			}
-			fix.Root = toUrlCase(tmp)
+			fix.Root = str.UrlCase(tmp)
 		} else if fix.Root == "-" {
 			fix.Root = ""
 		}
 
 		if fix.Url == "" {
-			fix.Url = toUrlCase(field.Name)
+			fix.Url = str.UrlCase(field.Name)
 		} else if fix.Url == "-" {
 			fix.Url = ""
 		}
@@ -126,10 +128,10 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 		if method == "CRUD" {
 
 			// Validate crud method parameters (inputs and outputs)
-			NewEndPoint(NewMethodInvoker(svc, upFirstChar(field.Name)), fix, "CRUD", me.mods, me.stores, me.auth)
+			NewEndPoint(NewMethodInvoker(svc, str.SentenceCase(field.Name)), fix, "CRUD", me.mods, me.stores, me.auth)
 
 			// Validate crud struct fields
-			vals := reflect.ValueOf(svc).MethodByName(upFirstChar(field.Name)).Call([]reflect.Value{})
+			vals := reflect.ValueOf(svc).MethodByName(str.SentenceCase(field.Name)).Call([]reflect.Value{})
 			crud := vals[0].Interface().(CRUD)
 
 			crud.useMasterIfMissing()
@@ -230,7 +232,7 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 
 		} else {
 
-			exec := NewMethodInvoker(svc, upFirstChar(field.Name))
+			exec := NewMethodInvoker(svc, str.SentenceCase(field.Name))
 			if exec.exists || fix.Stub != "" {
 				ep := NewEndPoint(exec, fix, method, me.mods, me.stores, me.auth)
 				ep.setupMuxHandlers(me.mux)
