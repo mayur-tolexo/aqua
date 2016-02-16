@@ -10,20 +10,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/thejackrabbit/aero/panik"
 )
-
-func upFirstChar(inp string) string {
-	if len(inp) > 0 {
-		u := []rune(inp)
-		u[0] = unicode.ToUpper(u[0])
-		return string(u)
-	}
-
-	return ""
-}
 
 func cleanUrl(pieces ...string) string {
 
@@ -86,19 +75,6 @@ func getSignOfType(t reflect.Type) string {
 
 func getSignOfObject(o interface{}) string {
 	return getSignOfType(reflect.TypeOf(o))
-}
-
-func toUrlCase(camel string) string {
-	var words []string
-	l := 0
-	for s := camel; s != ""; s = s[l:] {
-		l = strings.IndexFunc(s[1:], unicode.IsUpper) + 1
-		if l <= 0 {
-			l = len(s)
-		}
-		words = append(words, s[:l])
-	}
-	return strings.ToLower(strings.Join(words, "-"))
 }
 
 func panicIf(e error) {
