@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/smartystreets/goconvey/convey"
-	"github.com/thejackrabbit/aero/db/cstr"
 	"net/http"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
+	"github.com/thejackrabbit/aero/db/cstr"
 )
 
 type epMock struct{}
@@ -319,7 +320,7 @@ func TestErrorFormats(t *testing.T) {
 			var m map[string]interface{}
 			json.Unmarshal([]byte(content), &m)
 			val, _ := m["message"]
-			So(val, ShouldEqual, "Oops! An error was encountered")
+			So(val, ShouldEqual, "Oops! An error occurred")
 			m2, _ := m["error"].(map[string]interface{})
 			val2, _ := m2["title"]
 			So(val2, ShouldEqual, "bingo-error")
@@ -341,7 +342,7 @@ func TestErrorFormats(t *testing.T) {
 		Convey("Then the Fault output for interface{} should work for a Post request", func() {
 			url := fmt.Sprintf("http://localhost:%d/err/post-error-i", s.Port)
 			code, _, _ := postUrl(url, nil, nil)
-			So(code, ShouldEqual, 422)
+			So(code, ShouldEqual, 417)
 		})
 	})
 }
