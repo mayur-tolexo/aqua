@@ -3,14 +3,15 @@ package aqua
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/thejackrabbit/aero/db/cstr"
 	"github.com/thejackrabbit/aero/db/orm"
 	"github.com/thejackrabbit/aero/ds"
 	"github.com/thejackrabbit/aero/engine"
 	"github.com/thejackrabbit/aero/panik"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type Api struct{ Fixture }
@@ -86,7 +87,7 @@ func (c *CrudApi) getMethod(action string) string {
 func (c *CrudApi) Rdbms_Read(primKey string) interface{} {
 	m, _ := c.Model()
 
-	dbo := orm.From(c.Engine, c.Conn)
+	dbo := orm.GetConn(c.Engine, c.Conn)
 
 	if err := dbo.Debug().First(m, primKey).Error; err != nil {
 		return err
@@ -104,7 +105,7 @@ func (c *CrudApi) Rdbms_Create(j Jar) interface{} {
 		return err
 	}
 
-	dbo := orm.From(c.Engine, c.Conn)
+	dbo := orm.GetConn(c.Engine, c.Conn)
 
 	stmt := dbo.Debug().Create(m)
 
@@ -118,7 +119,7 @@ func (c *CrudApi) Rdbms_Create(j Jar) interface{} {
 func (c *CrudApi) Rdbms_Delete(primKey string) interface{} {
 	m, _ := c.Model()
 
-	dbo := orm.From(c.Engine, c.Conn)
+	dbo := orm.GetConn(c.Engine, c.Conn)
 
 	if err := dbo.Debug().Where(primKey).Delete(m).Error; err != nil {
 		return err
@@ -136,7 +137,7 @@ func (c *CrudApi) Rdbms_Update(primKey string, j Jar) interface{} {
 		return err
 	}
 
-	dbo := orm.From(c.Engine, c.Conn)
+	dbo := orm.GetConn(c.Engine, c.Conn)
 
 	m, _ := c.Model()
 
@@ -151,7 +152,7 @@ func (c *CrudApi) Rdbms_FetchSql(j Jar) interface{} {
 	j.LoadVars()
 	m, col := c.Model()
 
-	dbo := orm.From(c.Engine, c.Conn)
+	dbo := orm.GetConn(c.Engine, c.Conn)
 
 	if err := dbo.Debug().Model(m).Where(j.Body).Find(col).Error; err != nil {
 		return err
@@ -235,7 +236,7 @@ func (c *CrudApi) Rdbms_FetchSqlJson(j Jar) interface{} {
 	}
 
 	m, col := c.Model()
-	dbo := orm.From(c.Engine, c.Conn)
+	dbo := orm.GetConn(c.Engine, c.Conn)
 
 	if err := dbo.Debug().Model(m).
 		Where(whr, p...).
