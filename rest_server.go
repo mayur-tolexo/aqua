@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/thejackrabbit/aero/cache"
 	"github.com/thejackrabbit/aero/panik"
+	"github.com/thejackrabbit/aero/refl"
 	"github.com/thejackrabbit/aero/str"
 )
 
@@ -251,19 +252,8 @@ func (me *RestServer) addServiceToList(ep endPoint) {
 }
 
 func (me *RestServer) validateService(svc interface{}) {
-	svcType := reflect.TypeOf(svc)
-	code := getSignOfType(svcType)
-
-	// validation: must be pointer
-	if !strings.HasPrefix(code, "*st:") {
-		panic("RestServer.AddService() expects address of your Service object")
-	}
-
-	// validation: RestService field must be present and be anonymous
-	rs, ok := svcType.Elem().FieldByName("RestService")
-	if !ok || !rs.Anonymous || !rs.Type.ConvertibleTo(reflect.TypeOf(RestService{})) {
-		panic("RestServer.AddService() expects object that contains anonymous RestService field")
-	}
+	panik.If(!refl.IsAddress(svc), "RestServer.AddService() expects address of your Service object")
+	panik.If(!refl.ComposedOf(svc, RestService{}), "RestServer.AddService() expects object that contains anonymous RestService field")
 }
 
 func (me *RestServer) Run() {
