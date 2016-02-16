@@ -8,8 +8,8 @@ import (
 
 type jarService struct {
 	RestService
-	echo  GetApi
-	echo2 GetApi
+	echo  GET
+	echo2 GET
 }
 
 func (u *jarService) Echo(j Jar) string {

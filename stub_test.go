@@ -8,8 +8,8 @@ import (
 
 type stubService struct {
 	RestService
-	mock       GetApi `stub:"mocks/mock.json"`
-	mockNoFile GetApi `stub:"mocks/missing.json"`
+	mock       GET `stub:"mocks/mock.json"`
+	mockNoFile GET `stub:"mocks/missing.json"`
 }
 
 func TestStubFileMissing(t *testing.T) {

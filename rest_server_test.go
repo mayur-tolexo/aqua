@@ -37,8 +37,8 @@ func TestGetShouldNotHonourPost(t *testing.T) {
 
 type AnyService struct {
 	RestService
-	honourGet  GetApi `url:"a-url"`
-	honourPost GetApi `url:"a-url"`
+	honourGet  GET `url:"a-url"`
+	honourPost GET `url:"a-url"`
 }
 
 func (me *AnyService) HonourGet() string  { return "" }
@@ -61,8 +61,8 @@ func TestSameUrlWithSameHttpMethods(t *testing.T) {
 
 type AnyServiceA struct {
 	RestService
-	honourGet  GetApi  `url:"a-url"`
-	honourPost PostApi `url:"a-url"`
+	honourGet GET  `url:"a-url"`
+	honourPost POST `url:"a-url"`
 }
 
 func (me *AnyServiceA) HonourGet() string  { return "" }
@@ -141,28 +141,28 @@ func TestAddMethodValidations(t *testing.T) {
 
 type UserServiceA struct {
 	RestService `root:"/A"`
-	getUser     GetApi
+	getUser GET
 }
 
 func (me *UserServiceA) GetUser() string { return "" }
 
 type UserServiceB struct {
 	RestService `version:"0.3" root:"/B"`
-	getUser     GetApi
+	getUser GET
 }
 
 func (me *UserServiceB) GetUser() string { return "" }
 
 type UserServiceC struct {
 	RestService `version:"0.3" root:"/C"`
-	getUser     GetApi
+	getUser GET
 }
 
 func (me *UserServiceC) GetUser() string { return "" }
 
 type UserServiceD struct {
 	RestService `version:"0.3" root:"/D"`
-	getUser     GetApi `version:"0.5"`
+	getUser GET `version:"0.5"`
 }
 
 func (me *UserServiceD) GetUser() string { return "" }

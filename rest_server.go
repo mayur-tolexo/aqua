@@ -130,7 +130,7 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 
 			// Validate crud struct fields
 			vals := reflect.ValueOf(svc).MethodByName(upFirstChar(field.Name)).Call([]reflect.Value{})
-			crud := vals[0].Interface().(CrudApi)
+			crud := vals[0].Interface().(CRUD)
 
 			crud.useMasterIfMissing()
 			crud.validate()

@@ -57,8 +57,8 @@ func TestJarInputIsIdentifiedCorrectly(t *testing.T) {
 
 type verService struct {
 	RestService   `root:"versioning"`
-	api_version_1 GetApi `version:"1" url:"api"`
-	api_version_2 GetApi `version:"2" url:"api"`
+	api_version_1 GET `version:"1" url:"api"`
+	api_version_2 GET `version:"2" url:"api"`
 }
 
 func (me *verService) Api_version_1() string { return "one" }
@@ -66,7 +66,7 @@ func (me *verService) Api_version_2() string { return "two" }
 
 type newVerService struct {
 	RestService   `root:"versioning"`
-	api_version_3 GetApi `version:"3" url:"api"`
+	api_version_3 GET `version:"3" url:"api"`
 }
 
 func (me *newVerService) Api_version_3() string { return "three" }
@@ -128,8 +128,8 @@ func TestVersionCapability(t *testing.T) {
 
 type namingServ struct {
 	RestService `root:"any" prefix:"day"`
-	getapi      GetApi `version:"1.0" url:"api"`
-	noversion   GetApi `url:"noversion-here"`
+	getapi    GET `version:"1.0" url:"api"`
+	noversion GET `url:"noversion-here"`
 }
 
 func (me *namingServ) Getapi() string { return "whoa" }
@@ -163,14 +163,14 @@ func TestUrlNameConstruction(t *testing.T) {
 
 type dataService struct {
 	RestService
-	getStruct  GetApi
-	getStructI GetApi
-	getString  GetApi
-	getStringI GetApi
-	getMap     GetApi
-	getMapI    GetApi
-	getSlice   GetApi
-	getSliceI  GetApi
+	getStruct  GET
+	getStructI GET
+	getString  GET
+	getStringI GET
+	getMap     GET
+	getMapI    GET
+	getSlice   GET
+	getSliceI  GET
 }
 
 func (me *dataService) GetStruct() Fixture {
@@ -288,9 +288,9 @@ func TestAllOutputDataFormats(t *testing.T) {
 
 type errService struct {
 	RestService
-	getErrorI  GetApi
-	getFaultI  GetApi
-	postErrorI PostApi
+	getErrorI GET
+	getFaultI GET
+	postErrorI POST
 }
 
 func (me *errService) GetErrorI() interface{} {
@@ -349,11 +349,11 @@ func TestErrorFormats(t *testing.T) {
 
 type param2Service struct {
 	RestService
-	getStruct GetApi
-	getString GetApi
-	getMap    GetApi
-	getSlice  GetApi
-	getI      GetApi
+	getStruct GET
+	getString GET
+	getMap    GET
+	getSlice  GET
+	getI      GET
 }
 
 func (s *param2Service) GetStruct() (int, Fixture) {
@@ -398,11 +398,11 @@ type someModel struct {
 
 type crudOut1Service struct {
 	RestService
-	outMethod CrudApi
+	outMethod CRUD
 }
 
-func (s *crudOut1Service) OutMethod() CrudApi {
-	return CrudApi{
+func (s *crudOut1Service) OutMethod() CRUD {
+	return CRUD{
 		//Storage: cstr.Storage{Engine: "mysql", Conn: "blah"},
 		Storage: cstr.Storage{
 			Engine: "mysql",
@@ -416,7 +416,7 @@ func (s *crudOut1Service) OutMethod() CrudApi {
 
 type crudOut2Service struct {
 	RestService
-	outMethod CrudApi
+	outMethod CRUD
 }
 
 func (s *crudOut2Service) OutMethod() (int, string) {
@@ -425,7 +425,7 @@ func (s *crudOut2Service) OutMethod() (int, string) {
 
 type crudOut3Service struct {
 	RestService
-	outMethod CrudApi
+	outMethod CRUD
 }
 
 func (s *crudOut3Service) OutMethod() string {

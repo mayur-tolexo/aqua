@@ -16,26 +16,26 @@ import (
 
 type Api struct{ Fixture }
 
-type GetApi struct{ Api }
-type PostApi struct{ Api }
-type PutApi struct{ Api }
-type PatchApi struct{ Api }
-type DeleteApi struct{ Api }
+type GET struct{ Api }
+type POST struct{ Api }
+type PUT struct{ Api }
+type PATCH struct{ Api }
+type DELETE struct{ Api }
 
-type CrudApi struct {
+type CRUD struct {
 	Api
 	cstr.Storage
 	Model func() (interface{}, interface{})
 }
 
 // If DB infomraiton was not set by user, then try to use the master
-func (c *CrudApi) useMasterIfMissing() {
+func (c *CRUD) useMasterIfMissing() {
 	if c.Engine == "" && c.Conn == "" {
 		c.Storage = cstr.Get(true)
 	}
 }
 
-func (c *CrudApi) validate() {
+func (c *CRUD) validate() {
 	panik.If(c.Engine == "", "Crud storage engine not specified")
 	panik.If(c.Conn == "", "Crud storage conn not spefieid")
 
@@ -51,7 +51,7 @@ func (c *CrudApi) validate() {
 	}
 }
 
-func (c *CrudApi) getMethod(action string) string {
+func (c *CRUD) getMethod(action string) string {
 
 	switch c.Engine {
 	case "mysql", "maria", "mariadb", "postgres", "sqlite3":
@@ -84,7 +84,7 @@ func (c *CrudApi) getMethod(action string) string {
 	return ""
 }
 
-func (c *CrudApi) Rdbms_Read(primKey string) interface{} {
+func (c *CRUD) Rdbms_Read(primKey string) interface{} {
 	m, _ := c.Model()
 
 	dbo := orm.GetConn(c.Engine, c.Conn)
@@ -95,7 +95,7 @@ func (c *CrudApi) Rdbms_Read(primKey string) interface{} {
 	return m
 }
 
-func (c *CrudApi) Rdbms_Create(j Jar) interface{} {
+func (c *CRUD) Rdbms_Create(j Jar) interface{} {
 	j.LoadVars()
 
 	m, _ := c.Model()
@@ -116,7 +116,7 @@ func (c *CrudApi) Rdbms_Create(j Jar) interface{} {
 	return map[string]interface{}{"rows_affected": stmt.RowsAffected, "success": 1}
 }
 
-func (c *CrudApi) Rdbms_Delete(primKey string) interface{} {
+func (c *CRUD) Rdbms_Delete(primKey string) interface{} {
 	m, _ := c.Model()
 
 	dbo := orm.GetConn(c.Engine, c.Conn)
@@ -128,7 +128,7 @@ func (c *CrudApi) Rdbms_Delete(primKey string) interface{} {
 	return map[string]interface{}{"success": 1}
 }
 
-func (c *CrudApi) Rdbms_Update(primKey string, j Jar) interface{} {
+func (c *CRUD) Rdbms_Update(primKey string, j Jar) interface{} {
 	j.LoadVars()
 
 	var data map[string]interface{}
@@ -148,7 +148,7 @@ func (c *CrudApi) Rdbms_Update(primKey string, j Jar) interface{} {
 	return map[string]interface{}{"success": 1}
 }
 
-func (c *CrudApi) Rdbms_FetchSql(j Jar) interface{} {
+func (c *CRUD) Rdbms_FetchSql(j Jar) interface{} {
 	j.LoadVars()
 	m, col := c.Model()
 
@@ -160,7 +160,7 @@ func (c *CrudApi) Rdbms_FetchSql(j Jar) interface{} {
 	return col
 }
 
-func (c *CrudApi) Rdbms_FetchSqlJson(j Jar) interface{} {
+func (c *CRUD) Rdbms_FetchSqlJson(j Jar) interface{} {
 	j.LoadVars()
 
 	var data map[string]interface{}
@@ -250,7 +250,7 @@ func (c *CrudApi) Rdbms_FetchSqlJson(j Jar) interface{} {
 	return col
 }
 
-func (c *CrudApi) Memcache_Read(primKey string) interface{} {
+func (c *CRUD) Memcache_Read(primKey string) interface{} {
 
 	// Memcache object
 	spl := strings.Split(c.Conn, ":")
@@ -269,7 +269,7 @@ func (c *CrudApi) Memcache_Read(primKey string) interface{} {
 	}
 }
 
-func (c *CrudApi) Memcache_Update(primKey string, j Jar) interface{} {
+func (c *CRUD) Memcache_Update(primKey string, j Jar) interface{} {
 
 	// Memcache object
 	spl := strings.Split(c.Conn, ":")
@@ -289,7 +289,7 @@ func (c *CrudApi) Memcache_Update(primKey string, j Jar) interface{} {
 	return ""
 }
 
-func (c *CrudApi) Memcache_Delete(primKey string, j Jar) interface{} {
+func (c *CRUD) Memcache_Delete(primKey string, j Jar) interface{} {
 
 	// Memcache object
 	spl := strings.Split(c.Conn, ":")

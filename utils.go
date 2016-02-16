@@ -3,7 +3,6 @@ package aqua
 import (
 	"bytes"
 	"fmt"
-	"github.com/thejackrabbit/aero/panik"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -12,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/thejackrabbit/aero/panik"
 )
 
 func upFirstChar(inp string) string {
@@ -161,6 +162,10 @@ func getHttpMethod(field reflect.StructField) string {
 	case "aqua.GetApi", "aqua.PostApi", "aqua.PutApi", "aqua.PatchApi", "aqua.DeleteApi", "aqua.CrudApi":
 		out = field.Type.String()
 		out = out[5 : len(out)-3]
+		out = strings.ToUpper(out)
+	case "aqua.GET", "aqua.POST", "aqua.PUT", "aqua.PATCH", "aqua.DELETE", "aqua.CRUD":
+		out = field.Type.String()
+		out = out[5:]
 		out = strings.ToUpper(out)
 	}
 

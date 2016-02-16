@@ -2,14 +2,15 @@ package aqua
 
 import (
 	"fmt"
-	"github.com/carbocation/interpose"
-	"github.com/gorilla/mux"
-	"github.com/thejackrabbit/aero/cache"
-	"github.com/thejackrabbit/aero/panik"
 	"net/http"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/carbocation/interpose"
+	"github.com/gorilla/mux"
+	"github.com/thejackrabbit/aero/cache"
+	"github.com/thejackrabbit/aero/panik"
 )
 
 type endPoint struct {
@@ -147,7 +148,7 @@ func (me *endPoint) validateFuncOutputsAreCorrect() {
 
 	if me.httpMethod == "CRUD" {
 		panik.If(me.exec.outCount != 1, "CrudApi must return 1 param only")
-		panik.If(me.exec.outParams[0] != "st:github.com/thejackrabbit/aqua.CrudApi", "CrudApi return must be of type CrudApi")
+		panik.If(me.exec.outParams[0] != "st:github.com/thejackrabbit/aqua.CRUD", "CRUD return must be of type CRUD")
 	} else if !me.stdHandler {
 		switch me.exec.outCount {
 		case 1:

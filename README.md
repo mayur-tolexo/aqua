@@ -47,7 +47,7 @@ First define a service controller in your project that supports a GET response (
 ```
 type HelloService struct {
 	aqua.RestService
-	world aqua.GetApi
+	world aqua.GET
 }
 ```
 
@@ -90,7 +90,7 @@ The service urls are derived from url tags. If none are specified then it defaul
 ```
 type HelloService struct {
 	aqua.RestService
-	world aqua.GetApi `url:"moon"`
+	world aqua.GET `url:"moon"`
 }
 ```
 
@@ -103,8 +103,8 @@ Simply add both the methods, but specify versions in field tags.
 ```
 type HelloService struct {
 	aqua.RestService
-	world aqua.GetApi `version:"1.0" url:"moon"`
-	worldNew aqua.GetApi `version:"1.1" url:"moon"`
+	world aqua.GET `version:"1.0" url:"moon"`
+	worldNew aqua.GET `version:"1.1" url:"moon"`
 }
 func (me *HelloService) World() string {
 	return "Hello World"
@@ -136,8 +136,8 @@ To change the root directory (*hello*), you can use the *root* tag at each servi
 ```
 type HelloService struct {
 	aqua.RestService  `root:"this-is-the"`
-	world aqua.GetApi `version:"1.0" url:"moon"`
-	worldNew aqua.GetApi `version:"1.1" url:"moon"`
+	world aqua.GET `version:"1.0" url:"moon"`
+	worldNew aqua.GET `version:"1.1" url:"moon"`
 }
 ```
 
@@ -152,8 +152,8 @@ You can also use the 'prefix' field. This part comes in before version informati
 ```
 type HelloService struct {
 	aqua.RestService  `root:"this-is-the" prefix:"sunshine"`
-	world aqua.GetApi `version:"1.0" url:"moon"`
-	worldNew aqua.GetApi `version:"1.1" url:"moon"`
+	world aqua.GET `version:"1.0" url:"moon"`
+	worldNew aqua.GET `version:"1.1" url:"moon"`
 }
 ```
 So with this prefix now set, our end points would become:
@@ -167,7 +167,7 @@ Also note that, all there of these properties (url, root and prefix) can contain
 ```
 type HelloService struct {
 	aqua.RestService  `root:"this-is-the" prefix:"sunshine"`
-	world aqua.GetApi `version:"1.0" url:"/good/old/moon"`
+	world aqua.GET `version:"1.0" url:"/good/old/moon"`
 }
 ```
 
@@ -209,7 +209,7 @@ server.Run()
 ```
 type CatalogService struct {
 	aqua.RestService  `root:"catalog" prefix:"mycompany"`
-	getProduct aqua.GetApi `version:"1.0" url:"product"`
+	getProduct aqua.GET `version:"1.0" url:"product"`
 }
 ```
 
@@ -244,7 +244,7 @@ Its simple, you add an input variable to your implementation method of type aqua
 ```
 type HelloService struct {
 	aqua.RestService
-	world aqua.GetApi
+	world aqua.GET
 }
 
 func (me *HelloService) World(j aqua.Jar) string {
@@ -264,7 +264,7 @@ You start by defining the url with the appropriate dynamic variable as per the g
 ```
 type HelloService struct {
 	aqua.RestService
-	world aqua.GetApi `url:"/country/{c}"`
+	world aqua.GET `url:"/country/{c}"`
 }
 ```
 Then you just read this value in the associated method. Note: Aqua currently supports passing int and string parameters.
@@ -282,8 +282,8 @@ In case you are reading an integer value, then you can define strict logic in ur
 ```
 type HelloService struct {
 	aqua.RestService
-	world aqua.GetApi `url:"/country/{c}"`
-	capital aqua.GetApi `url:/capital/{cap:[0-9]+}`
+	world aqua.GET `url:"/country/{c}"`
+	capital aqua.GET `url:/capital/{cap:[0-9]+}`
 }
 ```
 ---
@@ -327,10 +327,10 @@ To achive this, we specify the 'root' variable at the top level by defining it a
 ```
 type HelloService struct {
 	aqua.RestService `root:"Hello"`
-	service1 aqua.GetApi
-	service2 aqua.GetApi
+	service1 aqua.GET
+	service2 aqua.GET
 	..
-	serviceN aqua.GetApi
+	serviceN aqua.GET
 }
 ```
 
@@ -345,10 +345,10 @@ Last but not the least, you can specify a value at a service endpoint. You can d
 ```
 type HelloService struct {
 	aqua.RestService `root:"Hello"`
-	service1 aqua.GetApi `root:"Hiya"` //Hiya overrides Hello
-	service2 aqua.GetApi
+	service1 aqua.GET `root:"Hiya"` //Hiya overrides Hello
+	service2 aqua.GET
 	..
-	serviceN aqua.GetApi
+	serviceN aqua.GET
 }
 ```
 
@@ -413,8 +413,8 @@ Now all we need to do to use this cache is to set the "ttl" tag. So lets look at
 ```
 type CatalogService struct {
 	RestService
-	getProduct  GetApi `url:"product/{id}"  ttl:"5m"`
-	getSeller   GetApi `url:"seller/{id}"   ttl:"15m" cache:"remote"`
+	getProduct  GET `url:"product/{id}"  ttl:"5m"`
+	getSeller   GET `url:"seller/{id}"   ttl:"15m" cache:"remote"`
 }
 ```
 Thats it. You are good to go!
@@ -473,8 +473,8 @@ server.Run()
 // And to use it in our service, we just pass it to the tag
 type CatalogService struct {
 	RestService
-	getProduct  GetApi `url:"product/{id}"  module:"slowLog"`
-	getSeller   GetApi `url:"seller/{id}"`  module:"slowLog, module2, module3"
+	getProduct  GET `url:"product/{id}"  module:"slowLog"`
+	getSeller   GET `url:"seller/{id}"`  module:"slowLog, module2, module3"
 }
 
 ```
@@ -503,7 +503,7 @@ Yes. Aqua makes is possible to create mock api stubs using external files. You c
 ```
 type MockService struct {
 	RestService
-	yetToCode  GetApi `stub:"samples/some.json"`
+	yetToCode  GET `stub:"samples/some.json"`
 }
 
 // And then run it
@@ -549,15 +549,15 @@ Second, we add an endpoint of type CrudApi (instead of Post or Get etc)
 ```
 type AutoService struct {
 	RestService
-	users  CrudApi
+	users  CRUD
 }
 ```
 
 Third, in the service method, we define the function to return a CrudApi struct address.
 
 ```
-func (s *AutoService) Users() CrudApi {
-	return CrudApi {
+func (s *AutoService) Users() CRUD {
+	return CRUD {
 		Model: func() (interface{}, interface{}) {
 			return &User{}, nil
 		}
@@ -595,8 +595,8 @@ That's it. You write a function to return a CrudApi object and you get 4 CRUD me
 By default, AQUA uses the default master database (as specified in you yaml file). If you want to override it then you can do so easily, as shown below:
 
 ```
-func (s *AutoService) Users() CrudApi {
-	return CrudApi {
+func (s *AutoService) Users() CRUD {
+	return CRUD {
 		Engine: "mysql",
 		Conn: "your-connection-string",
 		Model: func() (interface{}, interface{}) {
@@ -622,8 +622,8 @@ SELECT * FROM <model_table> WHERE <conditions>
 Continuing from the previous example, let us modify the CrudApi return to include Models() method:
 
 ```
-func (s *AutoService) Users() CrudApi {
-	return CrudApi {
+func (s *AutoService) Users() CRUD {
+	return CRUD {
 		// Add 2nd return (slice of your models)
 		Model: func() (interface{}, interface{}) {
 			return &User{}, &[]User{}
