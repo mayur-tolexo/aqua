@@ -129,6 +129,7 @@ func (me *endPoint) validateFuncInputsAreOfRightType() {
 			switch s {
 			case "st:github.com/thejackrabbit/aqua.Jar":
 			case "int":
+			case "uint":
 			case "string":
 			default:
 				panic("Func input params should be 'int' or 'string'. Observed: " + s + " in " + me.exec.name)
@@ -179,7 +180,7 @@ func (me *endPoint) isAcceptableType(dataType string) bool {
 		return true
 	}
 
-	if strings.HasPrefix(dataType, "st:") || strings.HasPrefix(dataType, "sl:") {
+	if strings.HasPrefix(dataType, "st:") || strings.HasPrefix(dataType, "sl:") || strings.HasPrefix(dataType, "*st:") {
 		return true
 	}
 
