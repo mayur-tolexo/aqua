@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/thejackrabbit/aero/db/cstr"
+	"github.com/thejackrabbit/aero/ds"
 )
 
 type epMock struct{}
@@ -128,8 +130,8 @@ func TestVersionCapability(t *testing.T) {
 
 type namingServ struct {
 	RestService `root:"any" prefix:"day"`
-	getapi    GET `version:"1.0" url:"api"`
-	noversion GET `url:"noversion-here"`
+	getapi      GET `version:"1.0" url:"api"`
+	noversion   GET `url:"noversion-here"`
 }
 
 func (me *namingServ) Getapi() string { return "whoa" }
@@ -288,8 +290,8 @@ func TestAllOutputDataFormats(t *testing.T) {
 
 type errService struct {
 	RestService
-	getErrorI GET
-	getFaultI GET
+	getErrorI  GET
+	getFaultI  GET
 	postErrorI POST
 }
 
@@ -298,11 +300,17 @@ func (me *errService) GetErrorI() interface{} {
 }
 
 func (me *errService) GetFaultI() interface{} {
-	return NewFault(errors.New("shingo-error"), "there was an error")
+	return Fault{
+		Message: "there was an error",
+		Issue:   errors.New("bingo-error"),
+	}
 }
 
 func (me *errService) PostErrorI() interface{} {
-	return NewFault(errors.New("shingo-error"), "there was an error")
+	return Fault{
+		Message: "there was an error",
+		Issue:   errors.New("shingo-error"),
+	}
 }
 
 func TestErrorFormats(t *testing.T) {
@@ -321,8 +329,7 @@ func TestErrorFormats(t *testing.T) {
 			json.Unmarshal([]byte(content), &m)
 			val, _ := m["message"]
 			So(val, ShouldEqual, "Oops! An error occurred")
-			m2, _ := m["error"].(map[string]interface{})
-			val2, _ := m2["title"]
+			val2, _ := m["issue"]
 			So(val2, ShouldEqual, "bingo-error")
 		})
 
@@ -334,9 +341,8 @@ func TestErrorFormats(t *testing.T) {
 			json.Unmarshal([]byte(content), &m)
 			val, _ := m["message"]
 			So(val, ShouldEqual, "there was an error")
-			m2, _ := m["error"].(map[string]interface{})
-			val2, _ := m2["title"]
-			So(val2, ShouldEqual, "shingo-error")
+			val2, _ := m["issue"]
+			So(val2, ShouldEqual, "bingo-error")
 		})
 
 		Convey("Then the Fault output for interface{} should work for a Post request", func() {
@@ -347,36 +353,81 @@ func TestErrorFormats(t *testing.T) {
 	})
 }
 
-type param2Service struct {
+type TwoParams struct {
 	RestService
 	getStruct GET
 	getString GET
 	getMap    GET
 	getSlice  GET
 	getI      GET
+
+	getStruct2 GET
+	getString2 GET
+	getMap2    GET
+	getSlice2  GET
+	getI2      GET
+
+	getString3 GET
+	getFault3  GET
 }
 
-func (s *param2Service) GetStruct() (int, Fixture) {
+func (s *TwoParams) GetStruct() (int, Fixture) {
 	return 200, Fixture{}
 }
 
-func (s *param2Service) GetString() (int, string) {
+func (s *TwoParams) GetString() (int, string) {
 	return 200, "abc"
 }
 
-func (s *param2Service) GetMap() (int, map[string]interface{}) {
+func (s *TwoParams) GetMap() (int, map[string]interface{}) {
 	var m map[string]interface{} = make(map[string]interface{})
 	return 200, m
 }
 
-func (s *param2Service) GetSlice() (int, []Fixture) {
+func (s *TwoParams) GetSlice() (int, []Fixture) {
 	return 200, []Fixture{
 		Fixture{},
 	}
 }
 
-func (s *param2Service) GetI() (int, interface{}) {
+func (s *TwoParams) GetI() (int, interface{}) {
 	return 200, 12345
+}
+
+func (s *TwoParams) GetStruct2() (Fixture, error) {
+	return Fixture{Allow: "+-"}, nil
+}
+
+func (s *TwoParams) GetString2() (string, error) {
+	return "abc2", nil
+}
+
+func (s *TwoParams) GetMap2() (map[string]interface{}, error) {
+	var m map[string]interface{} = make(map[string]interface{})
+	m["is-it"] = "really-true"
+	return m, nil
+}
+
+func (s *TwoParams) GetSlice2() ([]Fixture, error) {
+	return []Fixture{
+		Fixture{Allow: "+"}, Fixture{Deny: "-"},
+	}, nil
+}
+
+func (s *TwoParams) GetI2() (interface{}, error) {
+	return "12345", nil
+}
+
+func (s *TwoParams) GetString3() (string, error) {
+	return "", errors.New("whatsup")
+}
+
+func (s *TwoParams) GetFault3() (string, error) {
+	return "", Fault{
+		HttpCode: 410,
+		Message:  "there it is",
+		Issue:    errors.New("whatsup"),
+	}
 }
 
 func TestServicesReturning2Params(t *testing.T) {
@@ -385,11 +436,102 @@ func TestServicesReturning2Params(t *testing.T) {
 		Convey("Then returning int (status code) followed by is map/struct/interface/string/slice is acceptable", func() {
 			So(func() {
 				s := NewRestServer()
-				s.AddService(&param2Service{})
+				s.AddService(&TwoParams{})
 				s.Port = getUniquePortForTestCase()
 				s.RunAsync()
 			}, ShouldNotPanic)
 		})
+	})
+}
+
+func TestServiceReturnsXPlusError(t *testing.T) {
+
+	Convey("Given a RestServer", t, func() {
+
+		Convey("Endpoint implementations of with 2 return types <something>, error should be supported", func() {
+
+			s := NewRestServer()
+			s.AddService(&TwoParams{})
+			s.Port = getUniquePortForTestCase()
+			s.RunAsync()
+
+			Convey("And when error is nil", func() {
+
+				Convey("Then string <something> must be sent to caller", func() {
+					url := fmt.Sprintf("http://localhost:%d/two-params/get-string2", s.Port)
+					code, _, data := getUrl(url, nil)
+					So(code, ShouldEqual, 200)
+					So(data, ShouldEqual, "abc2")
+				})
+
+				Convey("Then struct <something> must be sent to caller", func() {
+					url := fmt.Sprintf("http://localhost:%d/two-params/get-struct2", s.Port)
+					code, _, data := getUrl(url, nil)
+					So(code, ShouldEqual, 200)
+					var js map[string]interface{}
+					ds.Load(&js, []byte(data))
+					So(js["Allow"], ShouldEqual, "+-")
+				})
+
+				Convey("Then slice <something> must be sent to caller", func() {
+					url := fmt.Sprintf("http://localhost:%d/two-params/get-slice2", s.Port)
+					code, _, data := getUrl(url, nil)
+					So(code, ShouldEqual, 200)
+					var js []interface{}
+					ds.Load(&js, []byte(data))
+					So(len(js), ShouldEqual, 2)
+					So(js[0].(map[string]interface{})["Allow"], ShouldEqual, "+")
+				})
+
+				Convey("Then map <something> must be sent to caller", func() {
+					url := fmt.Sprintf("http://localhost:%d/two-params/get-map2", s.Port)
+					code, _, data := getUrl(url, nil)
+					So(code, ShouldEqual, 200)
+					var js map[string]interface{}
+					ds.Load(&js, []byte(data))
+					So(js["is-it"], ShouldEqual, "really-true")
+				})
+
+				Convey("Then interface <something> must be sent to caller", func() {
+					url := fmt.Sprintf("http://localhost:%d/two-params/get-i2", s.Port)
+					code, _, data := getUrl(url, nil)
+					So(code, ShouldEqual, 200)
+					inty, err := strconv.Atoi(data)
+					fmt.Println(inty, err)
+					So(inty, ShouldEqual, 12345)
+					So(err, ShouldBeNil)
+				})
+			})
+
+			Convey("And when error is not nil", func() {
+
+				Convey("Then error must be returned to caller", func() {
+					url := fmt.Sprintf("http://localhost:%d/two-params/get-string3", s.Port)
+					code, _, data := getUrl(url, nil)
+					So(code, ShouldEqual, 404)
+					var js map[string]interface{}
+					ds.Load(&js, []byte(data))
+					So(js["message"], ShouldEqual, "Oops! An error occurred")
+					So(js["issue"], ShouldEqual, "whatsup")
+				})
+
+				Convey("And if error is a Fault", func() {
+
+					Convey("Then Fault, along with any custom http status must be returned", func() {
+						url := fmt.Sprintf("http://localhost:%d/two-params/get-fault3", s.Port)
+						code, _, data := getUrl(url, nil)
+						So(code, ShouldEqual, 410)
+						var js map[string]interface{}
+						ds.Load(&js, []byte(data))
+						So(js["message"], ShouldEqual, "there it is")
+						So(js["issue"], ShouldEqual, "whatsup")
+					})
+
+				})
+			})
+
+		})
+
 	})
 }
 

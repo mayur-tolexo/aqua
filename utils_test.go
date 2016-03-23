@@ -1,21 +1,23 @@
 package aqua
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"reflect"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
+	"github.com/thejackrabbit/aero/str"
 )
 
 func TestUpFirstChar(t *testing.T) {
 	Convey("Given the function: upFirstChar()", t, func() {
 		Convey("Then it should convert first char to uppercase if it is lowercase", func() {
-			So(upFirstChar("golang"), ShouldEqual, "Golang")
+			So(str.SentenceCase("golang"), ShouldEqual, "Golang")
 		})
 		Convey("Then it should not make any change if the first char is already uppercase", func() {
-			So(upFirstChar("Golang"), ShouldEqual, "Golang")
+			So(str.SentenceCase("Golang"), ShouldEqual, "Golang")
 		})
 		Convey("Then it should make no change to an empty string", func() {
-			So(upFirstChar(""), ShouldEqual, "")
+			So(str.SentenceCase(""), ShouldEqual, "")
 		})
 	})
 }
@@ -56,11 +58,11 @@ func TestGetTypeInfo(t *testing.T) {
 func TestToUrlCase(t *testing.T) {
 	Convey("Given the function: toUrlCase()", t, func() {
 		Convey("Then it should handle camelcase strings accurately", func() {
-			So(toUrlCase("AbraKaDabra"), ShouldEqual, "abra-ka-dabra")
-			So(toUrlCase("NCR"), ShouldEqual, "n-c-r")
+			So(str.UrlCase("AbraKaDabra"), ShouldEqual, "abra-ka-dabra")
+			So(str.UrlCase("NCR"), ShouldEqual, "n-c-r")
 		})
 		Convey("Then it should leave numbers as such", func() {
-			So(toUrlCase("word1with2num"), ShouldEqual, "word1with2num")
+			So(str.UrlCase("word1with2num"), ShouldEqual, "word1with2num")
 		})
 	})
 }

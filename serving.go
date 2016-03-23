@@ -2,12 +2,13 @@ package aqua
 
 import (
 	"fmt"
-	"github.com/thejackrabbit/aero/ds"
-	"github.com/thejackrabbit/aero/panik"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/thejackrabbit/aero/ds"
+	"github.com/thejackrabbit/aero/panik"
 )
 
 func writeOutput(w http.ResponseWriter, r *http.Request, signs []string, vals []reflect.Value, pretty string) {
@@ -19,11 +20,20 @@ func writeOutput(w http.ResponseWriter, r *http.Request, signs []string, vals []
 			writeItem(w, r, signs[0], vals[0], pretty)
 		}
 	} else if len(signs) == 2 {
-		// first thing would be an integer (http status code)
-		w.WriteHeader(int(vals[0].Int()))
-
-		// second be the payload
-		writeItem(w, r, signs[1], vals[1], pretty)
+		if signs[0] == "int" {
+			// first thing would be an integer (http status code)
+			w.WriteHeader(int(vals[0].Int()))
+			// second be the payload
+			writeItem(w, r, signs[1], vals[1], pretty)
+		} else if signs[1] == "i:.error" {
+			if vals[1].IsNil() {
+				writeItem(w, r, signs[0], vals[0], pretty)
+			} else {
+				writeItem(w, r, signs[1], vals[1], pretty)
+			}
+		} else {
+			panic("unsupported format")
+		}
 	}
 }
 
@@ -46,14 +56,11 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 	case sign == "st:github.com/thejackrabbit/aqua.Sac":
 		s := val.Interface().(Sac)
 		writeItem(w, r, getSignOfObject(s.Data), reflect.ValueOf(s.Data), pretty)
-	case isError(val.Interface()):
-		f := NewFault(val.Interface().(error), "Oops! An error occurred")
-		writeItem(w, r, getSignOfObject(f), reflect.ValueOf(f), pretty)
 	case sign == "st:github.com/thejackrabbit/aqua.Fault":
-		j, _ := ds.ToBytes(val.Interface(), pretty == "true" || pretty == "1")
 		f := val.Interface().(Fault)
-		if f.httpCode != 0 {
-			w.WriteHeader(f.httpCode)
+		j, _ := ds.ToBytes(f, pretty == "true" || pretty == "1")
+		if f.HttpCode != 0 {
+			w.WriteHeader(f.HttpCode)
 		} else {
 			// 417: Expectation failed
 			switch r.Method {
@@ -63,13 +70,24 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 				w.WriteHeader(417)
 			case "DELETE":
 				w.WriteHeader(417)
+			case "PUT":
+				w.WriteHeader(444) // TODO: change
 			default:
-				panik.Do("Status code missing for method %", r.Method)
+				panik.Do("Status code missing for method: %", r.Method)
 			}
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
 		w.Write(j)
+	case isError(val.Interface()):
+		f, ok := val.Interface().(Fault)
+		if !ok {
+			f = Fault{
+				Message: "Oops! An error occurred",
+				Issue:   val.Interface().(error),
+			}
+		}
+		writeItem(w, r, getSignOfObject(f), reflect.ValueOf(f), pretty)
 	case sign == "map":
 		j, _ := ds.ToBytes(val.Interface(), pretty == "true" || pretty == "1")
 		w.Header().Set("Content-Type", "application/json")

@@ -188,26 +188,26 @@ func (c *CRUD) Rdbms_FetchSqlJson(j Jar) interface{} {
 	}
 
 	// if limit is not specified then set it to ""
-	lim := ""
+	lim := 100
 	limit, ok := data["limit"]
 	if ok {
-		f, ok := limit.(float64)
+		f, ok := limit.(int)
 		if !ok {
 			return errors.New("limit must be integer")
 		} else {
-			lim = strconv.Itoa(int(f))
+			lim = f
 		}
 	}
 
 	// if offset is not specified then set it to ""
-	off := ""
+	off := 1
 	offset, ok := data["offset"]
 	if ok {
-		f, ok := offset.(float64)
+		f, ok := offset.(int)
 		if !ok {
 			return errors.New("offset must be integer")
 		} else {
-			off = strconv.Itoa(int(f))
+			off = f
 		}
 	}
 

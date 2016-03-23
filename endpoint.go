@@ -139,6 +139,34 @@ func (me *endPoint) validateFuncInputsAreOfRightType() {
 
 func (me *endPoint) validateFuncOutputsAreCorrect() {
 
+	if me.httpMethod == "CRUD" {
+		panik.If(me.exec.outCount != 1, "CrudApi must return 1 param only")
+		panik.If(me.exec.outParams[0] != "st:github.com/thejackrabbit/aqua.CRUD", "CRUD return must be of type CRUD")
+	} else if !me.stdHandler {
+		switch me.exec.outCount {
+		case 1:
+			if !me.isAcceptableType(me.exec.outParams[0]) {
+				panic("Incorrect return type found in: " + me.exec.name + " - " + me.exec.outParams[0])
+			}
+		case 2:
+			if me.exec.outParams[0] == "int" {
+				if !me.isAcceptableType(me.exec.outParams[1]) {
+					panic("Two param func must have type <int> followed by an acceptable type. Found: " + me.exec.name)
+				}
+			} else if me.exec.outParams[1] == "i:.error" {
+				if !me.isAcceptableType(me.exec.outParams[0]) {
+					panic("Two param func must have type acceptable type followed by an error." + me.exec.name + "Found:" + me.exec.outParams[0])
+				}
+			} else {
+				panic("Two param func must have type int,<something> or <something>,error." + me.exec.name + "Found:" + me.exec.outParams[0] + "," + me.exec.outParams[1])
+			}
+		default:
+			panik.Do("Incorrect number of returns for Func: %s", me.exec.name)
+		}
+	}
+}
+
+func (me *endPoint) isAcceptableType(dataType string) bool {
 	var accepts = make(map[string]bool)
 	accepts["string"] = true
 	accepts["map"] = true
@@ -146,30 +174,17 @@ func (me *endPoint) validateFuncOutputsAreCorrect() {
 	accepts["*st:github.com/thejackrabbit/aqua.Sac"] = true
 	accepts["i:."] = true
 
-	if me.httpMethod == "CRUD" {
-		panik.If(me.exec.outCount != 1, "CrudApi must return 1 param only")
-		panik.If(me.exec.outParams[0] != "st:github.com/thejackrabbit/aqua.CRUD", "CRUD return must be of type CRUD")
-	} else if !me.stdHandler {
-		switch me.exec.outCount {
-		case 1:
-			_, found := accepts[me.exec.outParams[0]]
-			correctPrefix := strings.HasPrefix(me.exec.outParams[0], "st:") || strings.HasPrefix(me.exec.outParams[0], "sl:")
-			if !found && !correctPrefix {
-				panic("Incorrect return type found in: " + me.exec.name + " - " + me.exec.outParams[0])
-			}
-		case 2:
-			if me.exec.outParams[0] != "int" {
-				panic("When a func returns two params, the first must be an int (http status code) : " + me.exec.name)
-			}
-			_, found := accepts[me.exec.outParams[1]]
-			correctPrefix := strings.HasPrefix(me.exec.outParams[1], "st:") || strings.HasPrefix(me.exec.outParams[1], "sl:")
-			if !found && !correctPrefix {
-				panic("Incorrect return type for second return param found in: " + me.exec.name + " - " + me.exec.outParams[1])
-			}
-		default:
-			panik.Do("Incorrect number of returns for Func: %s", me.exec.name)
-		}
+	_, found := accepts[dataType]
+	if found {
+		return true
 	}
+
+	if strings.HasPrefix(dataType, "st:") || strings.HasPrefix(dataType, "sl:") {
+		return true
+	}
+
+	// no acceptable data type match
+	return false
 }
 
 func (me *endPoint) setupMuxHandlers(mux *mux.Router) (svcUrl string) {
