@@ -183,6 +183,12 @@ func convertToType(vars []string, typ []string) []reflect.Value {
 				panik.Do("Cannot convert [%s] to 'int'", v)
 			}
 			vals[i] = reflect.ValueOf(j)
+		case "uint":
+			j, err := strconv.ParseUint(v, 10, 32)
+			if err != nil {
+				panik.Do("Cannot convert [%s] to 'uint'", v)
+			}
+			vals[i] = reflect.ValueOf(uint(j))
 		default:
 			panik.Do("Type [%s] is not supported", t)
 		}
