@@ -95,7 +95,7 @@ func (c *CRUD) Rdbms_Read(primKey string) interface{} {
 	return m
 }
 
-func (c *CRUD) Rdbms_Create(j Jar) interface{} {
+func (c *CRUD) Rdbms_Create(j Aide) interface{} {
 	j.LoadVars()
 
 	m, _ := c.Model()
@@ -128,7 +128,7 @@ func (c *CRUD) Rdbms_Delete(primKey string) interface{} {
 	return map[string]interface{}{"success": 1}
 }
 
-func (c *CRUD) Rdbms_Update(primKey string, j Jar) interface{} {
+func (c *CRUD) Rdbms_Update(primKey string, j Aide) interface{} {
 	j.LoadVars()
 
 	var data map[string]interface{}
@@ -148,7 +148,7 @@ func (c *CRUD) Rdbms_Update(primKey string, j Jar) interface{} {
 	return map[string]interface{}{"success": 1}
 }
 
-func (c *CRUD) Rdbms_FetchSql(j Jar) interface{} {
+func (c *CRUD) Rdbms_FetchSql(j Aide) interface{} {
 	j.LoadVars()
 	m, col := c.Model()
 
@@ -160,7 +160,7 @@ func (c *CRUD) Rdbms_FetchSql(j Jar) interface{} {
 	return col
 }
 
-func (c *CRUD) Rdbms_FetchSqlJson(j Jar) interface{} {
+func (c *CRUD) Rdbms_FetchSqlJson(j Aide) interface{} {
 	j.LoadVars()
 
 	var data map[string]interface{}
@@ -269,7 +269,7 @@ func (c *CRUD) Memcache_Read(primKey string) interface{} {
 	}
 }
 
-func (c *CRUD) Memcache_Update(primKey string, j Jar) interface{} {
+func (c *CRUD) Memcache_Update(primKey string, j Aide) interface{} {
 
 	// Memcache object
 	spl := strings.Split(c.Conn, ":")
@@ -289,7 +289,7 @@ func (c *CRUD) Memcache_Update(primKey string, j Jar) interface{} {
 	return ""
 }
 
-func (c *CRUD) Memcache_Delete(primKey string, j Jar) interface{} {
+func (c *CRUD) Memcache_Delete(primKey string, j Aide) interface{} {
 
 	// Memcache object
 	spl := strings.Split(c.Conn, ":")

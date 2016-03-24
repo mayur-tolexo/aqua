@@ -52,7 +52,7 @@ func NewEndPoint(inv Invoker, f Fixture, httpMethod string, mods map[string]func
 	// Perform all validations, unless it is a mock stub
 	if f.Stub == "" {
 		out.stdHandler = out.signatureMatchesDefaultHttpHandler()
-		out.jarInput = out.needsJarInput()
+		out.jarInput = out.needsAideInput()
 
 		out.validateMuxVarsMatchFuncInputs()
 		out.validateFuncInputsAreOfRightType()
@@ -96,14 +96,14 @@ func (me *endPoint) signatureMatchesDefaultHttpHandler() bool {
 		me.exec.inpParams[1] == "*st:net/http.Request"
 }
 
-func (me *endPoint) needsJarInput() bool {
+func (me *endPoint) needsAideInput() bool {
 	// needs jar input as the last parameter
 	for i := 0; i < len(me.exec.inpParams)-1; i++ {
-		if me.exec.inpParams[i] == "st:github.com/thejackrabbit/aqua.Jar" {
-			panic("Jar parameter should be the last one: " + me.exec.name)
+		if me.exec.inpParams[i] == "st:github.com/thejackrabbit/aqua.Aide" {
+			panic("Aide parameter should be the last one: " + me.exec.name)
 		}
 	}
-	return me.exec.inpCount > 0 && me.exec.inpParams[me.exec.inpCount-1] == "st:github.com/thejackrabbit/aqua.Jar"
+	return me.exec.inpCount > 0 && me.exec.inpParams[me.exec.inpCount-1] == "st:github.com/thejackrabbit/aqua.Aide"
 }
 
 func (me *endPoint) validateMuxVarsMatchFuncInputs() {
@@ -127,7 +127,7 @@ func (me *endPoint) validateFuncInputsAreOfRightType() {
 	if !me.stdHandler {
 		for _, s := range me.exec.inpParams {
 			switch s {
-			case "st:github.com/thejackrabbit/aqua.Jar":
+			case "st:github.com/thejackrabbit/aqua.Aide":
 			case "int":
 			case "uint":
 			case "string":
@@ -280,7 +280,7 @@ func handleIncoming(e *endPoint) func(http.ResponseWriter, *http.Request) {
 		} else {
 			ref := convertToType(params, e.exec.inpParams)
 			if e.jarInput {
-				ref = append(ref, reflect.ValueOf(NewJar(r)))
+				ref = append(ref, reflect.ValueOf(NewAide(r)))
 			}
 
 			if useCache {

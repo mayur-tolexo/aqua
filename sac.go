@@ -1,30 +1,31 @@
 package aqua
 
 import (
-	"github.com/fatih/structs"
 	"reflect"
+
+	"github.com/fatih/structs"
 )
 
 func init() {
 	structs.DefaultTagName = "json"
 }
 
-type Sac struct {
+type Sac1 struct {
 	Data map[string]interface{}
 }
 
-func NewSac() *Sac {
-	return &Sac{Data: make(map[string]interface{})}
+func NewSac1() *Sac1 {
+	return &Sac1{Data: make(map[string]interface{})}
 }
 
-func (me *Sac) Set(key string, i interface{}) *Sac {
+func (me *Sac1) Set(key string, i interface{}) *Sac1 {
 
 	if i == nil {
 		me.Data[key] = nil
 	} else {
 		switch reflect.TypeOf(i).Kind() {
 		case reflect.Struct:
-			if s, ok := i.(Sac); ok {
+			if s, ok := i.(Sac1); ok {
 				me.Data[key] = s.Data
 			} else {
 				me.Data[key] = structs.Map(i)
@@ -43,11 +44,11 @@ func (me *Sac) Set(key string, i interface{}) *Sac {
 }
 
 // Item being merged must be a struct or a map
-func (me *Sac) Merge(i interface{}) *Sac {
+func (me *Sac1) Merge(i interface{}) *Sac1 {
 
 	switch reflect.TypeOf(i).Kind() {
 	case reflect.Struct:
-		if s, ok := i.(Sac); ok {
+		if s, ok := i.(Sac1); ok {
 			me.Merge(s.Data)
 		} else {
 			me.Merge(structs.Map(i))

@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	// "github.com/mgutz/logxi/v1"
-	"github.com/thejackrabbit/aero/panik"
 	"reflect"
 	"strings"
+
+	"github.com/thejackrabbit/aero/panik"
 )
 
 // var logEnc = log.New("enc")
@@ -41,9 +42,6 @@ func encodeItem(j *json.Encoder, r reflect.Value, t string) {
 	case t == "string":
 		// logEnc.Info("encode.string")
 		panik.On(j.Encode(r.String()))
-	case t == "*st:github.com/thejackrabbit/aqua.Sac":
-		// logEnc.Info("encode.sac")
-		panik.On(j.Encode(r.Elem().Interface().(Sac).Data))
 	case t == "i:.":
 		// logEnc.Info("encode.i{}/")
 		s := getSignOfObject(r.Interface())
@@ -84,12 +82,6 @@ func decodeItem(j *json.Decoder, t string) reflect.Value {
 	case t == "string":
 		var s string
 		panik.On(j.Decode(&s))
-		r = reflect.ValueOf(s)
-	case t == "*st:github.com/thejackrabbit/aqua.Sac":
-		var m map[string]interface{}
-		panik.On(j.Decode(&m))
-		s := NewSac()
-		s.Data = m
 		r = reflect.ValueOf(s)
 	case t == "i:.":
 		var s string

@@ -26,32 +26,32 @@ func TestStandardHttpHandlerIsIdentifiedCorrectly(t *testing.T) {
 	})
 }
 
-func (me *epMock) Jar1(w http.ResponseWriter, r *http.Request) {}
-func (me *epMock) Jar2(j Jar) string                           { return "" }
-func (me *epMock) Jar3(j Jar, s string) string                 { return "" }
-func (me *epMock) Jar4(s string, j Jar) string                 { return "" }
-func (me *epMock) Jar5(j Jar, k Jar) string                    { return "" }
+func (me *epMock) Aide1(w http.ResponseWriter, r *http.Request) {}
+func (me *epMock) Aide2(j Aide) string                          { return "" }
+func (me *epMock) Aide3(j Aide, s string) string                { return "" }
+func (me *epMock) Aide4(s string, j Aide) string                { return "" }
+func (me *epMock) Aide5(j Aide, k Aide) string                  { return "" }
 
-func TestJarInputIsIdentifiedCorrectly(t *testing.T) {
+func TestAideInputIsIdentifiedCorrectly(t *testing.T) {
 	Convey("Given an endpoint and a Service Controller", t, func() {
-		Convey("A standard http function should NOT be marked for Jar", func() {
-			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Jar1"), Fixture{Url: "/abc/{d}/{e}"}, "GET", nil, nil, nil) //"/abc/{d}/{e}",
+		Convey("A standard http function should NOT be marked for Aide", func() {
+			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Aide1"), Fixture{Url: "/abc/{d}/{e}"}, "GET", nil, nil, nil) //"/abc/{d}/{e}",
 			So(ep.jarInput, ShouldBeFalse)
 		})
-		Convey("A function with one Jar input should be marked for Jar", func() {
-			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Jar2"), Fixture{Url: "/abc"}, "GET", nil, nil, nil) // "/abc",
+		Convey("A function with one Aide input should be marked for Aide", func() {
+			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Aide2"), Fixture{Url: "/abc"}, "GET", nil, nil, nil) // "/abc",
 			So(ep.jarInput, ShouldBeTrue)
 		})
-		Convey("Jar input in the begining should not work", func() {
+		Convey("Aide input in the begining should not work", func() {
 			So(func() {
-				NewEndPoint(NewMethodInvoker(&epMock{}, "Jar3"), Fixture{Url: "/abc/{d}"}, "GET", nil, nil, nil) // "/abc/{d}",
+				NewEndPoint(NewMethodInvoker(&epMock{}, "Aide3"), Fixture{Url: "/abc/{d}"}, "GET", nil, nil, nil) // "/abc/{d}",
 			}, ShouldPanic)
 			So(func() {
-				NewEndPoint(NewMethodInvoker(&epMock{}, "Jar5"), Fixture{Url: "/abc/{e}"}, "GET", nil, nil, nil) // "/abc/{e}",
+				NewEndPoint(NewMethodInvoker(&epMock{}, "Aide5"), Fixture{Url: "/abc/{e}"}, "GET", nil, nil, nil) // "/abc/{e}",
 			}, ShouldPanic)
 		})
-		Convey("Jar input at the end should be ok", func() {
-			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Jar4"), Fixture{Url: "/abc/{d}"}, "GET", nil, nil, nil) // "/abc/{d}",
+		Convey("Aide input at the end should be ok", func() {
+			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Aide4"), Fixture{Url: "/abc/{d}"}, "GET", nil, nil, nil) // "/abc/{d}",
 			So(ep.jarInput, ShouldBeTrue)
 		})
 	})

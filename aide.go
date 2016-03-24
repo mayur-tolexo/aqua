@@ -9,10 +9,10 @@ import (
 
 var separator string = ","
 
-// Jar allows access to 1/ the reqeust, and 2/ variables (post, get and body)
+// Aide allows access to 1/ the reqeust, and 2/ variables (post, get and body)
 // However, to load these variable values, LoadVars() method needs to be invoked
 // in prior.
-type Jar struct {
+type Aide struct {
 	// request handle
 	Request *http.Request
 
@@ -22,16 +22,16 @@ type Jar struct {
 	Body      string
 }
 
-func NewJar(r *http.Request) Jar {
-	return Jar{
+func NewAide(r *http.Request) Aide {
+	return Aide{
 		Request: r,
 	}
 }
 
-func (j *Jar) LoadVars() {
+func (j *Aide) LoadVars() {
 
 	if j.PostVars != nil {
-		panic("Jar.LoadVars can be called only once per request")
+		panic("Aide.LoadVars can be called only once per request")
 	} else {
 		j.PostVars = make(map[string]string)
 		j.QueryVars = make(map[string]string)
@@ -67,13 +67,13 @@ func getBody(r *http.Request) string {
 	return string(b)
 }
 
-func (j *Jar) loadPostVars(r *http.Request) {
+func (j *Aide) loadPostVars(r *http.Request) {
 	for k, _ := range r.PostForm {
 		j.PostVars[k] = strings.Join(r.PostForm[k], separator)
 	}
 }
 
-func (j *Jar) loadQueryVars(r *http.Request, skipPostVars bool) {
+func (j *Aide) loadQueryVars(r *http.Request, skipPostVars bool) {
 	for k, _ := range r.Form {
 		if skipPostVars {
 			// only add to query-vars if it is NOT a post var
