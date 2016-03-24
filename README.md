@@ -239,7 +239,7 @@ Basis this, the required Accept header will be need to changed to following:
 
 #### Q: How can I access query strings?
 
-Its simple, you add an input variable to your implementation method of type aqua.Jar. This variable gives you access to the Request object, and also has some helper method as shown below:
+Its simple, you add an input variable to your implementation method of type aqua.Aide (a helper class) This variable gives you access to the Request object, and also has some helper methods as shown below:
 
 ```
 type HelloService struct {
@@ -247,7 +247,7 @@ type HelloService struct {
 	world aqua.GET
 }
 
-func (me *HelloService) World(j aqua.Jar) string {
+func (me *HelloService) World(j aqua.Aide) string {
 	j.LoadVars()
 	return "Hello " + j.QueryVars["country"]
 }
