@@ -12,6 +12,7 @@ import (
 	"github.com/thejackrabbit/aero/ds"
 	"github.com/thejackrabbit/aero/engine"
 	"github.com/thejackrabbit/aero/panik"
+	"github.com/thejackrabbit/aero/refl"
 )
 
 type Api struct{ Fixture }
@@ -44,9 +45,9 @@ func (c *CRUD) validate() {
 
 		m, arr := c.Model()
 		panik.If(m == nil, "Model method returns nil")
-		panik.If(!strings.HasPrefix(getSignOfObject(m), "*st:"), "Model() method param 1 must be address of a gorm struct")
+		panik.If(!strings.HasPrefix(refl.ObjSignature(m), "*st:"), "Model() method param 1 must be address of a gorm struct")
 		if arr != nil {
-			panik.If(!strings.HasPrefix(getSignOfObject(arr), "*sl:"), "Model() method param 2 must be address of a slice of gorm struct")
+			panik.If(!strings.HasPrefix(refl.ObjSignature(arr), "*sl:"), "Model() method param 2 must be address of a slice of gorm struct")
 		}
 	}
 }
