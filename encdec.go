@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/thejackrabbit/aero/panik"
+	"github.com/thejackrabbit/aero/refl"
 )
 
 // var logEnc = log.New("enc")
@@ -44,7 +45,7 @@ func encodeItem(j *json.Encoder, r reflect.Value, t string) {
 		panik.On(j.Encode(r.String()))
 	case t == "i:.":
 		// logEnc.Info("encode.i{}/")
-		s := getSignOfObject(r.Interface())
+		s := refl.ObjSignature(r.Interface())
 		panik.On(j.Encode(s))
 		encodeItem(j, r, s)
 	case strings.HasPrefix(t, "st:"):

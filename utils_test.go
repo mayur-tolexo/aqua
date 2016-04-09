@@ -1,7 +1,6 @@
 package aqua
 
 import (
-	"reflect"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -37,20 +36,6 @@ func TestCleanUrl(t *testing.T) {
 			So(cleanUrl("a", "b", "c"), ShouldEqual, "/a/b/c")
 			So(cleanUrl("/a/", "/b/", "/c"), ShouldEqual, "/a/b/c")
 			So(cleanUrl("/a/", "/b/", "/c/"), ShouldEqual, "/a/b/c/")
-		})
-	})
-}
-
-func TestGetTypeInfo(t *testing.T) {
-	Convey("Given the function: getSymbolFromType()", t, func() {
-		Convey("Then it should revert st:<package-name>.<struct-name> for a struct type", func() {
-			a := Fixture{}
-			So(getSignOfType(reflect.TypeOf(a)), ShouldEqual, "st:github.com/thejackrabbit/aqua.Fixture")
-			So(getSignOfType(reflect.TypeOf(&a)), ShouldEqual, "*st:github.com/thejackrabbit/aqua.Fixture")
-		})
-		Convey("Then it should revert map for a map-type", func() {
-			a := make(map[string]interface{})
-			So(getSignOfType(reflect.TypeOf(a)), ShouldEqual, "map")
 		})
 	})
 }

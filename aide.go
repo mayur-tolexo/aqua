@@ -62,7 +62,9 @@ func (j *Aide) LoadVars() {
 
 func getBody(r *http.Request) string {
 	b, err := ioutil.ReadAll(r.Body)
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 	defer r.Body.Close()
 	return string(b)
 }

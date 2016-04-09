@@ -2,10 +2,12 @@ package aqua
 
 import (
 	"fmt"
-	"github.com/thejackrabbit/aero/db/orm"
-	"github.com/thejackrabbit/aero/panik"
 	"reflect"
 	"strings"
+
+	"github.com/thejackrabbit/aero/db/orm"
+	"github.com/thejackrabbit/aero/panik"
+	"github.com/thejackrabbit/aero/refl"
 )
 
 // Responsibility:
@@ -37,7 +39,7 @@ func NewMethodInvoker(addr interface{}, method string) Invoker {
 	}
 
 	// validation
-	symb := getSignOfObject(addr)
+	symb := refl.ObjSignature(addr)
 	panik.If(!strings.HasPrefix(symb, "*st:"), "Invoker expects address of a struct")
 
 	var m reflect.Method
@@ -57,7 +59,7 @@ func (me *Invoker) decipherOutputs(mt reflect.Type) {
 
 	for i := 0; i < mt.NumOut(); i++ {
 		pt := mt.Out(i)
-		me.outParams[i] = getSignOfType(pt)
+		me.outParams[i] = refl.TypeSignature(pt)
 	}
 }
 
@@ -68,7 +70,7 @@ func (me *Invoker) decipherInputs(mt reflect.Type) {
 
 	for i := 1; i < mt.NumIn(); i++ {
 		pt := mt.In(i)
-		me.inpParams[i-1] = getSignOfType(pt)
+		me.inpParams[i-1] = refl.TypeSignature(pt)
 	}
 }
 

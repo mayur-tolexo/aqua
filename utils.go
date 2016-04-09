@@ -53,36 +53,6 @@ func removeMultSlashes(inp string) string {
 	return find.ReplaceAllString(inp, "/")
 }
 
-func getSignOfType(t reflect.Type) string {
-	symb := ""
-	if t.Kind() == reflect.Ptr {
-		symb = "*" + getSignOfType(t.Elem())
-	} else if t.Kind() == reflect.Map {
-		symb = "map"
-	} else if t.Kind() == reflect.Struct {
-		symb = "st:" + t.PkgPath() + "." + t.Name()
-	} else if t.Kind() == reflect.Interface {
-		symb = "i:" + t.PkgPath() + "." + t.Name()
-	} else if t.Kind() == reflect.Array {
-		symb = "sl:" + t.Elem().PkgPath() + "." + t.Elem().Name()
-	} else if t.Kind() == reflect.Slice {
-		symb = "sl:" + t.Elem().PkgPath() + "." + t.Elem().Name()
-	} else {
-		symb = t.Name()
-	}
-	return symb
-}
-
-func getSignOfObject(o interface{}) string {
-	return getSignOfType(reflect.TypeOf(o))
-}
-
-func panicIf(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 func getUrl(url string, headers map[string]string) (httpCode int, contentType string, content string) {
 	req, _ := http.NewRequest("GET", url, nil)
 	if headers != nil {
@@ -93,11 +63,15 @@ func getUrl(url string, headers map[string]string) (httpCode int, contentType st
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
 	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(resp.Body)
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
 	return resp.StatusCode, resp.Header.Get("Content-Type"), string(data)
 }
@@ -116,11 +90,15 @@ func postUrl(uri string, post map[string]string, headers map[string]string) (htt
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
 	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(resp.Body)
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
 	return resp.StatusCode, resp.Header.Get("Content-Type"), string(data)
 }

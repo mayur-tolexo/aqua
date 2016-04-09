@@ -9,6 +9,7 @@ import (
 
 	"github.com/thejackrabbit/aero/ds"
 	"github.com/thejackrabbit/aero/panik"
+	"github.com/thejackrabbit/aero/refl"
 )
 
 func writeOutput(w http.ResponseWriter, r *http.Request, signs []string, vals []reflect.Value, pretty string) {
@@ -42,7 +43,7 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 	// Dereference a pointer to a struct or slice
 	if strings.HasPrefix(sign, "*st:") || strings.HasPrefix(sign, "*sl:") {
 		o := val.Elem()
-		writeItem(w, r, getSignOfType(o.Type()), o, pretty)
+		writeItem(w, r, refl.TypeSignature(o.Type()), o, pretty)
 		return
 	}
 
@@ -84,7 +85,7 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 				Issue:   val.Interface().(error),
 			}
 		}
-		writeItem(w, r, getSignOfObject(f), reflect.ValueOf(f), pretty)
+		writeItem(w, r, refl.ObjSignature(f), reflect.ValueOf(f), pretty)
 	case sign == "map":
 		j, _ := ds.ToBytes(val.Interface(), pretty == "true" || pretty == "1")
 		w.Header().Set("Content-Type", "application/json")
@@ -101,7 +102,7 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
 		w.Write(j)
 	case sign == "i:.":
-		writeItem(w, r, getSignOfObject(val.Interface()), val, pretty)
+		writeItem(w, r, refl.ObjSignature(val.Interface()), val, pretty)
 		// fmt.Println("interface{} resolves to:", getSignOfObject(val.Interface()))
 		//TODO: error handling in case the returned object is an error
 		//TODO: along with int, xx, also support xx, error as a function
