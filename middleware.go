@@ -1,13 +1,14 @@
 package aqua
 
 import (
-	"github.com/thejackrabbit/aero/panik"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/rightjoin/aero/panik"
 )
 
 func ModAccessLog(path string) func(http.Handler) http.Handler {

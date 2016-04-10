@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/thejackrabbit/aero/cache"
-	"github.com/thejackrabbit/aero/panik"
-	"github.com/thejackrabbit/aero/refl"
-	"github.com/thejackrabbit/aero/str"
+	"github.com/rightjoin/aero/cache"
+	"github.com/rightjoin/aero/panik"
+	"github.com/rightjoin/aero/refl"
+	"github.com/rightjoin/aero/str"
 )
 
 type Authorizer interface {

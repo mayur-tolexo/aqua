@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/thejackrabbit/aero/ds"
-	"github.com/thejackrabbit/aero/panik"
-	"github.com/thejackrabbit/aero/refl"
+	"github.com/rightjoin/aero/ds"
+	"github.com/rightjoin/aero/panik"
+	"github.com/rightjoin/aero/refl"
 )
 
 func writeOutput(w http.ResponseWriter, r *http.Request, signs []string, vals []reflect.Value, pretty string) {
@@ -54,7 +54,7 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 		w.Header().Set("Content-Type", "text/plain")
 		w.Header().Set("Content-Length", strconv.Itoa(len(v)))
 		fmt.Fprintf(w, "%s", v)
-	case sign == "st:github.com/thejackrabbit/aqua.Fault":
+	case sign == "st:github.com/rightjoin/aqua.Fault":
 		f := val.Interface().(Fault)
 		j, _ := ds.ToBytes(f, pretty == "true" || pretty == "1")
 		if f.HttpCode != 0 {

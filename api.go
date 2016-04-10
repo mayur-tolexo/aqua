@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/thejackrabbit/aero/db/cstr"
-	"github.com/thejackrabbit/aero/db/orm"
-	"github.com/thejackrabbit/aero/ds"
-	"github.com/thejackrabbit/aero/engine"
-	"github.com/thejackrabbit/aero/panik"
-	"github.com/thejackrabbit/aero/refl"
+	"github.com/rightjoin/aero/db/cstr"
+	"github.com/rightjoin/aero/db/orm"
+	"github.com/rightjoin/aero/ds"
+	"github.com/rightjoin/aero/engine"
+	"github.com/rightjoin/aero/panik"
+	"github.com/rightjoin/aero/refl"
 )
 
 type Api struct{ Fixture }

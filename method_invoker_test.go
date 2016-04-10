@@ -1,8 +1,9 @@
 package aqua
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type invokerMock struct{}
@@ -58,9 +59,9 @@ func TestInputParameters(t *testing.T) {
 			So(i.inpCount, ShouldEqual, 5)
 			So(i.inpParams[0], ShouldEqual, "int")
 			So(i.inpParams[1], ShouldEqual, "*string")
-			So(i.inpParams[2], ShouldEqual, "i:github.com/thejackrabbit/aqua.iInvoker")
-			So(i.inpParams[3], ShouldEqual, "st:github.com/thejackrabbit/aqua.invokerMock")
-			So(i.inpParams[4], ShouldEqual, "*st:github.com/thejackrabbit/aqua.invokerMock")
+			So(i.inpParams[2], ShouldEqual, "i:github.com/rightjoin/aqua.iInvoker")
+			So(i.inpParams[3], ShouldEqual, "st:github.com/rightjoin/aqua.invokerMock")
+			So(i.inpParams[4], ShouldEqual, "*st:github.com/rightjoin/aqua.invokerMock")
 		})
 	})
 }
@@ -84,9 +85,9 @@ func TestOutputParameters(t *testing.T) {
 			So(i.outCount, ShouldEqual, 5)
 			So(i.outParams[0], ShouldEqual, "int")
 			So(i.outParams[1], ShouldEqual, "*string")
-			So(i.outParams[2], ShouldEqual, "i:github.com/thejackrabbit/aqua.iInvoker")
-			So(i.outParams[3], ShouldEqual, "st:github.com/thejackrabbit/aqua.invokerMock")
-			So(i.outParams[4], ShouldEqual, "*st:github.com/thejackrabbit/aqua.invokerMock")
+			So(i.outParams[2], ShouldEqual, "i:github.com/rightjoin/aqua.iInvoker")
+			So(i.outParams[3], ShouldEqual, "st:github.com/rightjoin/aqua.invokerMock")
+			So(i.outParams[4], ShouldEqual, "*st:github.com/rightjoin/aqua.invokerMock")
 		})
 	})
 }

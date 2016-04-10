@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/rightjoin/aero/db/cstr"
+	"github.com/rightjoin/aero/ds"
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/thejackrabbit/aero/db/cstr"
-	"github.com/thejackrabbit/aero/ds"
 )
 
 type epMock struct{}

@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/thejackrabbit/aero/panik"
+	"github.com/rightjoin/aero/panik"
 )
 
 func cleanUrl(pieces ...string) string {

@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/thejackrabbit/aero/db/orm"
-	"github.com/thejackrabbit/aero/panik"
-	"github.com/thejackrabbit/aero/refl"
+	"github.com/rightjoin/aero/db/orm"
+	"github.com/rightjoin/aero/panik"
+	"github.com/rightjoin/aero/refl"
 )
 
 // Responsibility:

@@ -3,8 +3,8 @@ package aqua
 import (
 	"testing"
 
+	"github.com/rightjoin/aero/str"
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/thejackrabbit/aero/str"
 )
 
 func TestUpFirstChar(t *testing.T) {

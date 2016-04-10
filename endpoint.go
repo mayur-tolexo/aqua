@@ -9,8 +9,8 @@ import (
 
 	"github.com/carbocation/interpose"
 	"github.com/gorilla/mux"
-	"github.com/thejackrabbit/aero/cache"
-	"github.com/thejackrabbit/aero/panik"
+	"github.com/rightjoin/aero/cache"
+	"github.com/rightjoin/aero/panik"
 )
 
 type endPoint struct {
@@ -99,11 +99,11 @@ func (me *endPoint) signatureMatchesDefaultHttpHandler() bool {
 func (me *endPoint) needsAideInput() bool {
 	// needs jar input as the last parameter
 	for i := 0; i < len(me.exec.inpParams)-1; i++ {
-		if me.exec.inpParams[i] == "st:github.com/thejackrabbit/aqua.Aide" {
+		if me.exec.inpParams[i] == "st:github.com/rightjoin/aqua.Aide" {
 			panic("Aide parameter should be the last one: " + me.exec.name)
 		}
 	}
-	return me.exec.inpCount > 0 && me.exec.inpParams[me.exec.inpCount-1] == "st:github.com/thejackrabbit/aqua.Aide"
+	return me.exec.inpCount > 0 && me.exec.inpParams[me.exec.inpCount-1] == "st:github.com/rightjoin/aqua.Aide"
 }
 
 func (me *endPoint) validateMuxVarsMatchFuncInputs() {
@@ -127,7 +127,7 @@ func (me *endPoint) validateFuncInputsAreOfRightType() {
 	if !me.stdHandler {
 		for _, s := range me.exec.inpParams {
 			switch s {
-			case "st:github.com/thejackrabbit/aqua.Aide":
+			case "st:github.com/rightjoin/aqua.Aide":
 			case "int":
 			case "uint":
 			case "string":
@@ -142,7 +142,7 @@ func (me *endPoint) validateFuncOutputsAreCorrect() {
 
 	if me.httpMethod == "CRUD" {
 		panik.If(me.exec.outCount != 1, "CrudApi must return 1 param only")
-		panik.If(me.exec.outParams[0] != "st:github.com/thejackrabbit/aqua.CRUD", "CRUD return must be of type CRUD")
+		panik.If(me.exec.outParams[0] != "st:github.com/rightjoin/aqua.CRUD", "CRUD return must be of type CRUD")
 	} else if !me.stdHandler {
 		switch me.exec.outCount {
 		case 1:
@@ -171,8 +171,8 @@ func (me *endPoint) isAcceptableType(dataType string) bool {
 	var accepts = make(map[string]bool)
 	accepts["string"] = true
 	accepts["map"] = true
-	accepts["st:github.com/thejackrabbit/aqua.Sac"] = true
-	accepts["*st:github.com/thejackrabbit/aqua.Sac"] = true
+	accepts["st:github.com/rightjoin/aqua.Sac"] = true
+	accepts["*st:github.com/rightjoin/aqua.Sac"] = true
 	accepts["i:."] = true
 
 	_, found := accepts[dataType]

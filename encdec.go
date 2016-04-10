@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/thejackrabbit/aero/panik"
-	"github.com/thejackrabbit/aero/refl"
+	"github.com/rightjoin/aero/panik"
+	"github.com/rightjoin/aero/refl"
 )
 
 // var logEnc = log.New("enc")
