@@ -1,7 +1,7 @@
 package aqua
 
 import (
-	_ "fmt"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -87,4 +87,18 @@ func (j *Aide) loadQueryVars(r *http.Request, skipPostVars bool) {
 		}
 	}
 
+}
+
+func (a *Aide) HasPostVars(vars ...string) (bool, error) {
+	if a.PostVars == nil {
+		panic("LoadVars() method not invoked")
+	}
+
+	for _, v := range vars {
+		if _, ok := a.PostVars[v]; !ok {
+			return false, fmt.Errorf("Expected post variable (%s) missing", v)
+		}
+	}
+
+	return true, nil
 }
