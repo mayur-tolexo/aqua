@@ -56,7 +56,10 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 		fmt.Fprintf(w, "%s", v)
 	case sign == "st:github.com/rightjoin/aqua.Fault":
 		f := val.Interface().(Fault)
-		j, _ := ds.ToBytes(f, pretty == "true" || pretty == "1")
+		j, err := ds.ToBytes(f, pretty == "true" || pretty == "1")
+		if err != nil {
+			panic(err)
+		}
 		if f.HttpCode != 0 {
 			w.WriteHeader(f.HttpCode)
 		} else {
