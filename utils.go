@@ -18,9 +18,14 @@ func cleanUrl(pieces ...string) string {
 
 	var buffer bytes.Buffer
 
+	// init the buffer to be a relative url
+	buffer.WriteString("/")
+
 	for _, p := range pieces {
-		buffer.WriteString("/")
-		buffer.WriteString(p)
+		if p != "" && p != "-" {
+			buffer.WriteString("/")
+			buffer.WriteString(p)
+		}
 	}
 
 	url := removeMultSlashes(buffer.String())

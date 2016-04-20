@@ -116,8 +116,6 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 
 		if fix.Url == "" {
 			fix.Url = str.UrlCase(field.Name)
-		} else if fix.Url == "-" {
-			fix.Url = ""
 		}
 
 		method = getHttpMethod(field)
