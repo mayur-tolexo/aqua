@@ -14,7 +14,8 @@ var separator string = ","
 // in prior.
 type Aide struct {
 	// request handle
-	Request *http.Request
+	Request  *http.Request
+	Response http.ResponseWriter
 
 	// variables
 	PostVars  map[string]string
@@ -22,9 +23,10 @@ type Aide struct {
 	Body      string
 }
 
-func NewAide(r *http.Request) Aide {
+func NewAide(w http.ResponseWriter, r *http.Request) Aide {
 	return Aide{
-		Request: r,
+		Request:  r,
+		Response: w,
 	}
 }
 

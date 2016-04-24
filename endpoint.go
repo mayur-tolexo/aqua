@@ -19,7 +19,7 @@ type endPoint struct {
 	httpMethod string
 
 	stdHandler bool
-	jarInput   bool
+	needsAide  bool
 
 	urlWithVersion string
 	urlWoVersion   string
@@ -39,7 +39,7 @@ func NewEndPoint(inv Invoker, f Fixture, httpMethod string, mods map[string]func
 		exec:           inv,
 		config:         f,
 		stdHandler:     false,
-		jarInput:       false,
+		needsAide:      false,
 		urlWithVersion: cleanUrl(f.Prefix, "v"+f.Version, f.Root, f.Url),
 		urlWoVersion:   cleanUrl(f.Prefix, f.Root, f.Url),
 		muxVars:        extractRouteVars(f.Url),
@@ -52,7 +52,7 @@ func NewEndPoint(inv Invoker, f Fixture, httpMethod string, mods map[string]func
 	// Perform all validations, unless it is a mock stub
 	if f.Stub == "" {
 		out.stdHandler = out.signatureMatchesDefaultHttpHandler()
-		out.jarInput = out.needsAideInput()
+		out.needsAide = out.needsAideInput()
 
 		out.validateMuxVarsMatchFuncInputs()
 		out.validateFuncInputsAreOfRightType()
@@ -97,7 +97,7 @@ func (me *endPoint) signatureMatchesDefaultHttpHandler() bool {
 }
 
 func (me *endPoint) needsAideInput() bool {
-	// needs jar input as the last parameter
+	// aide the last parameter?
 	for i := 0; i < len(me.exec.inpParams)-1; i++ {
 		if me.exec.inpParams[i] == "st:github.com/rightjoin/aqua.Aide" {
 			panic("Aide parameter should be the last one: " + me.exec.name)
@@ -111,7 +111,7 @@ func (me *endPoint) validateMuxVarsMatchFuncInputs() {
 	// the count of inputs to the user's method
 	if !me.stdHandler {
 		inputs := me.exec.inpCount
-		if me.jarInput {
+		if me.needsAide {
 			inputs += -1
 		}
 		if me.httpMethod == "CRUD" {
@@ -279,8 +279,8 @@ func handleIncoming(e *endPoint) func(http.ResponseWriter, *http.Request) {
 			e.exec.Do([]reflect.Value{reflect.ValueOf(w), reflect.ValueOf(r)})
 		} else {
 			ref := convertToType(params, e.exec.inpParams)
-			if e.jarInput {
-				ref = append(ref, reflect.ValueOf(NewAide(r)))
+			if e.needsAide {
+				ref = append(ref, reflect.ValueOf(NewAide(w, r)))
 			}
 
 			if useCache {
