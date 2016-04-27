@@ -13,13 +13,10 @@ type Fault struct {
 
 func (f Fault) MarshalJSON() ([]byte, error) {
 
-	b := "{"
-
-	b += fmt.Sprintf(`"message":%s`, strconv.Quote(f.Message))
+	b := fmt.Sprintf(`{"message":%s`, strconv.Quote(f.Message))
 	if f.Issue != nil {
 		b += fmt.Sprintf(`, "issue": %s`, strconv.Quote(f.Issue.Error()))
 	}
-
 	b += "}"
 
 	return []byte(b), nil
