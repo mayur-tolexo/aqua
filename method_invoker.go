@@ -27,8 +27,8 @@ type Invoker struct {
 	inpCount  int
 	inpParams []string
 
-	db    bool
-	model interface{}
+	//db    bool
+	//model interface{}
 }
 
 func NewMethodInvoker(addr interface{}, method string) Invoker {
@@ -75,10 +75,10 @@ func (me *Invoker) decipherInputs(mt reflect.Type) {
 }
 
 func (me *Invoker) Do(v []reflect.Value) []reflect.Value {
-	if me.db {
-		ReadModel(me.model, v[0].String())
-		return []reflect.Value{reflect.ValueOf(me.model)}
-	}
+	// if me.db {
+	// 	//ReadModel(me.model, v[0].String())
+	// 	return []reflect.Value{reflect.ValueOf(me.model)}
+	// }
 	return reflect.ValueOf(me.addr).MethodByName(me.name).Call(v)
 }
 
@@ -96,6 +96,6 @@ func ReadModel(modl interface{}, pk string) {
 	fmt.Println(pk)
 	my := orm.Get(false)
 	my.SingularTable(true)
-	my.Debug().First(modl, pk)
+	my.First(modl, pk)
 	fmt.Println(modl)
 }
