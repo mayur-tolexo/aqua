@@ -36,11 +36,11 @@ func TestAideInputIsIdentifiedCorrectly(t *testing.T) {
 	Convey("Given an endpoint and a Service Controller", t, func() {
 		Convey("A standard http function should NOT be marked for Aide", func() {
 			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Aide1"), Fixture{Url: "/abc/{d}/{e}"}, "GET", nil, nil, nil) //"/abc/{d}/{e}",
-			So(ep.jarInput, ShouldBeFalse)
+			So(ep.needsAide, ShouldBeFalse)
 		})
 		Convey("A function with one Aide input should be marked for Aide", func() {
 			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Aide2"), Fixture{Url: "/abc"}, "GET", nil, nil, nil) // "/abc",
-			So(ep.jarInput, ShouldBeTrue)
+			So(ep.needsAide, ShouldBeTrue)
 		})
 		Convey("Aide input in the begining should not work", func() {
 			So(func() {
@@ -52,7 +52,7 @@ func TestAideInputIsIdentifiedCorrectly(t *testing.T) {
 		})
 		Convey("Aide input at the end should be ok", func() {
 			ep := NewEndPoint(NewMethodInvoker(&epMock{}, "Aide4"), Fixture{Url: "/abc/{d}"}, "GET", nil, nil, nil) // "/abc/{d}",
-			So(ep.jarInput, ShouldBeTrue)
+			So(ep.needsAide, ShouldBeTrue)
 		})
 	})
 }
