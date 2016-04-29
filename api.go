@@ -90,7 +90,7 @@ func (c *CRUD) Rdbms_Read(primKey string) interface{} {
 
 	dbo := orm.GetConn(c.Engine, c.Conn)
 
-	if err := dbo.Debug().First(m, primKey).Error; err != nil {
+	if err := dbo.First(m, primKey).Error; err != nil {
 		return err
 	}
 	return m
@@ -108,7 +108,7 @@ func (c *CRUD) Rdbms_Create(j Aide) interface{} {
 
 	dbo := orm.GetConn(c.Engine, c.Conn)
 
-	stmt := dbo.Debug().Create(m)
+	stmt := dbo.Create(m)
 
 	if stmt.Error != nil {
 		return stmt.Error
@@ -122,7 +122,7 @@ func (c *CRUD) Rdbms_Delete(primKey string) interface{} {
 
 	dbo := orm.GetConn(c.Engine, c.Conn)
 
-	if err := dbo.Debug().Where(primKey).Delete(m).Error; err != nil {
+	if err := dbo.Where(primKey).Delete(m).Error; err != nil {
 		return err
 	}
 
@@ -142,7 +142,7 @@ func (c *CRUD) Rdbms_Update(primKey string, j Aide) interface{} {
 
 	m, _ := c.Model()
 
-	if err := dbo.Debug().Model(m).Where(primKey).UpdateColumns(data).Error; err != nil {
+	if err := dbo.Model(m).Where(primKey).UpdateColumns(data).Error; err != nil {
 		return err
 	}
 
@@ -155,7 +155,7 @@ func (c *CRUD) Rdbms_FetchSql(j Aide) interface{} {
 
 	dbo := orm.GetConn(c.Engine, c.Conn)
 
-	if err := dbo.Debug().Model(m).Where(j.Body).Find(col).Error; err != nil {
+	if err := dbo.Model(m).Where(j.Body).Find(col).Error; err != nil {
 		return err
 	}
 	return col
@@ -239,7 +239,7 @@ func (c *CRUD) Rdbms_FetchSqlJson(j Aide) interface{} {
 	m, col := c.Model()
 	dbo := orm.GetConn(c.Engine, c.Conn)
 
-	if err := dbo.Debug().Model(m).
+	if err := dbo.Model(m).
 		Where(whr, p...).
 		Order(ord).
 		Limit(lim).
