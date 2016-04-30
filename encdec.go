@@ -3,11 +3,11 @@ package aqua
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	// "github.com/mgutz/logxi/v1"
 	"reflect"
 	"strings"
 
-	"github.com/rightjoin/aero/panik"
 	"github.com/rightjoin/aero/refl"
 )
 
@@ -36,26 +36,44 @@ func encodeItem(j *json.Encoder, r reflect.Value, t string) {
 	switch {
 	case t == "int":
 		//		logEnc.Info("encode.int")
-		panik.On(j.Encode(r.Int()))
+		err := j.Encode(r.Int())
+		if err != nil {
+			panic(err)
+		}
 	case t == "map":
 		// logEnc.Info("encode.map")
-		panik.On(j.Encode(r.Interface().(map[string]interface{})))
+		err := j.Encode(r.Interface().(map[string]interface{}))
+		if err != nil {
+			panic(err)
+		}
 	case t == "string":
 		// logEnc.Info("encode.string")
-		panik.On(j.Encode(r.String()))
+		err := j.Encode(r.String())
+		if err != nil {
+			panic(err)
+		}
 	case t == "i:.":
 		// logEnc.Info("encode.i{}/")
 		s := refl.ObjSignature(r.Interface())
-		panik.On(j.Encode(s))
+		err := j.Encode(s)
+		if err != nil {
+			panic(err)
+		}
 		encodeItem(j, r, s)
 	case strings.HasPrefix(t, "st:"):
 		// logEnc.Info("encode.struct")
-		panik.On(j.Encode(r.Interface()))
+		err := j.Encode(r.Interface())
+		if err != nil {
+			panic(err)
+		}
 	case strings.HasPrefix(t, "sl:"):
 		// logEnc.Info("encode.slice")
-		panik.On(j.Encode(r.Interface()))
+		err := j.Encode(r.Interface())
+		if err != nil {
+			panic(err)
+		}
 	default:
-		panik.Do("Can't encode '%s' for endpoint cache", t)
+		panic(fmt.Sprintf("Can't encode '%s' for endpoint cache", t))
 	}
 }
 
@@ -74,30 +92,48 @@ func decodeItem(j *json.Decoder, t string) reflect.Value {
 	switch {
 	case t == "int":
 		var i int
-		panik.On(j.Decode(&i))
+		err := j.Decode(&i)
+		if err != nil {
+			panic(err)
+		}
 		r = reflect.ValueOf(i)
 	case t == "map":
 		var m map[string]interface{}
-		panik.On(j.Decode(&m))
+		err := j.Decode(&m)
+		if err != nil {
+			panic(err)
+		}
 		r = reflect.ValueOf(m)
 	case t == "string":
 		var s string
-		panik.On(j.Decode(&s))
+		err := j.Decode(&s)
+		if err != nil {
+			panic(err)
+		}
 		r = reflect.ValueOf(s)
 	case t == "i:.":
 		var s string
-		panik.On(j.Decode(&s))
+		err := j.Decode(&s)
+		if err != nil {
+			panic(err)
+		}
 		r = decodeItem(j, s)
 	case strings.HasPrefix(t, "st:"):
 		var m map[string]interface{}
-		panik.On(j.Decode(&m))
+		err := j.Decode(&m)
+		if err != nil {
+			panic(err)
+		}
 		r = reflect.ValueOf(m)
 	case strings.HasPrefix(t, "sl:"):
 		var a []interface{}
-		panik.On(j.Decode(&a))
+		err := j.Decode(&a)
+		if err != nil {
+			panic(err)
+		}
 		r = reflect.ValueOf(a)
 	default:
-		panik.Do("Can't decdoe '%s' for endpoint cache", t)
+		panic(fmt.Sprintf("Can't decdoe '%s' for endpoint cache", t))
 	}
 
 	return r

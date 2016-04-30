@@ -11,7 +11,6 @@ import (
 	"github.com/rightjoin/aero/db/orm"
 	"github.com/rightjoin/aero/ds"
 	"github.com/rightjoin/aero/engine"
-	"github.com/rightjoin/aero/panik"
 	"github.com/rightjoin/aero/refl"
 )
 
@@ -37,17 +36,29 @@ func (c *CRUD) useMasterIfMissing() {
 }
 
 func (c *CRUD) validate() {
-	panik.If(c.Engine == "", "Crud storage engine not specified")
-	panik.If(c.Conn == "", "Crud storage conn not spefieid")
+	if c.Engine == "" {
+		panic("Crud storage engine not specified")
+	}
+	if c.Conn == "" {
+		panic("Crud storage conn not spefieid")
+	}
 
 	if c.getMethod("create") == "Rdbms_Create" { // Model is a must
-		panik.If(c.Model == nil, "Model not specified")
+		if c.Model == nil {
+			panic("Model not specified")
+		}
 
 		m, arr := c.Model()
-		panik.If(m == nil, "Model method returns nil")
-		panik.If(!strings.HasPrefix(refl.ObjSignature(m), "*st:"), "Model() method param 1 must be address of a gorm struct")
+		if m == nil {
+			panic("Model method returns nil")
+		}
+		if !strings.HasPrefix(refl.ObjSignature(m), "*st:") {
+			panic("Model() method param 1 must be address of a gorm struct")
+		}
 		if arr != nil {
-			panik.If(!strings.HasPrefix(refl.ObjSignature(arr), "*sl:"), "Model() method param 2 must be address of a slice of gorm struct")
+			if !strings.HasPrefix(refl.ObjSignature(arr), "*sl:") {
+				panic("Model() method param 2 must be address of a slice of gorm struct")
+			}
 		}
 	}
 }
@@ -257,7 +268,9 @@ func (c *CRUD) Memcache_Read(primKey string) interface{} {
 	spl := strings.Split(c.Conn, ":")
 	host := spl[0]
 	port, err := strconv.Atoi(spl[1])
-	panik.On(err)
+	if err != nil {
+		panic(err)
+	}
 	memc := engine.NewMemcache(host, port)
 	defer memc.Close()
 
@@ -276,13 +289,19 @@ func (c *CRUD) Memcache_Update(primKey string, j Aide) interface{} {
 	spl := strings.Split(c.Conn, ":")
 	host := spl[0]
 	port, err := strconv.Atoi(spl[1])
-	panik.On(err)
+	if err != nil {
+		panic(err)
+	}
 	memc := engine.NewMemcache(host, port)
 	defer memc.Close()
 
 	ttl, err := time.ParseDuration(c.Ttl)
-	panik.On(err)
-	panik.If(ttl == 0, "ttl cache duration should not be 0")
+	if err != nil {
+		panic(err)
+	}
+	if ttl == 0 {
+		panic("ttl cache duration should not be 0")
+	}
 
 	j.LoadVars()
 	memc.Set(primKey, []byte(j.Body), ttl)
@@ -296,17 +315,18 @@ func (c *CRUD) Memcache_Delete(primKey string, j Aide) interface{} {
 	spl := strings.Split(c.Conn, ":")
 	host := spl[0]
 	port, err := strconv.Atoi(spl[1])
-	panik.On(err)
+	if err != nil {
+		panic(err)
+	}
 	memc := engine.NewMemcache(host, port)
 	defer memc.Close()
 
 	err = memc.Delete(primKey)
 
-	if err == nil {
-		return ""
-	} else {
+	if err != nil {
 		return err
 	}
+	return ""
 }
 
 // TODO: write test cases for CRUD and fetch methods

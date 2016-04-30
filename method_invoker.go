@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/rightjoin/aero/db/orm"
-	"github.com/rightjoin/aero/panik"
 	"github.com/rightjoin/aero/refl"
 )
 
@@ -40,7 +39,9 @@ func NewMethodInvoker(addr interface{}, method string) Invoker {
 
 	// validation
 	symb := refl.ObjSignature(addr)
-	panik.If(!strings.HasPrefix(symb, "*st:"), "Invoker expects address of a struct")
+	if !strings.HasPrefix(symb, "*st:") {
+		panic("Invoker expects address of a struct")
+	}
 
 	var m reflect.Method
 	m, out.exists = reflect.TypeOf(out.addr).MethodByName(out.name)

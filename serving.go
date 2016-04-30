@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/rightjoin/aero/ds"
-	"github.com/rightjoin/aero/panik"
 	"github.com/rightjoin/aero/refl"
 )
 
@@ -74,7 +73,7 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 			case "PUT":
 				w.WriteHeader(444) // TODO: change
 			default:
-				panik.Do("Status code missing for method: %", r.Method)
+				panic(fmt.Sprintf("Status code missing for method: %", r.Method))
 			}
 		}
 		w.Header().Set("Content-Type", "application/json")

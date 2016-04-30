@@ -10,7 +10,6 @@ import (
 	"github.com/carbocation/interpose"
 	"github.com/gorilla/mux"
 	"github.com/rightjoin/aero/cache"
-	"github.com/rightjoin/aero/panik"
 )
 
 type endPoint struct {
@@ -78,9 +77,9 @@ func NewEndPoint(inv Invoker, f Fixture, httpMethod string, mods map[string]func
 			out.stash = c
 		} else if f.Cache != "" {
 			if out.config.Version == "" {
-				panik.Do("Cache provider %s is missing for %s", f.Cache, out.urlWoVersion)
+				panic(fmt.Sprintf("Cache provider %s is missing for %s", f.Cache, out.urlWoVersion))
 			} else {
-				panik.Do("Cache provider %s is missing for %s", f.Cache, out.urlWithVersion)
+				panic(fmt.Sprintf("Cache provider %s is missing for %s", f.Cache, out.urlWithVersion))
 			}
 
 		}
@@ -115,7 +114,9 @@ func (me *endPoint) validateMuxVarsMatchFuncInputs() {
 			inputs += -1
 		}
 		if me.httpMethod == "CRUD" {
-			panik.If(inputs != 0, "Crud methods should not take any inputs %s", me.exec.name)
+			if inputs != 0 {
+				panic(fmt.Sprintf("Crud methods should not take any inputs %s", me.exec.name))
+			}
 		} else if len(me.muxVars) != inputs {
 			panic(fmt.Sprintf("%s has %d inputs, but the func (%s) has %d",
 				me.urlWithVersion, len(me.muxVars), me.exec.name, inputs))
@@ -141,8 +142,12 @@ func (me *endPoint) validateFuncInputsAreOfRightType() {
 func (me *endPoint) validateFuncOutputsAreCorrect() {
 
 	if me.httpMethod == "CRUD" {
-		panik.If(me.exec.outCount != 1, "CrudApi must return 1 param only")
-		panik.If(me.exec.outParams[0] != "st:github.com/rightjoin/aqua.CRUD", "CRUD return must be of type CRUD")
+		if me.exec.outCount != 1 {
+			panic("CrudApi must return 1 param only")
+		}
+		if me.exec.outParams[0] != "st:github.com/rightjoin/aqua.CRUD" {
+			panic("CRUD return must be of type CRUD")
+		}
 	} else if !me.stdHandler {
 		switch me.exec.outCount {
 		case 1:
@@ -162,7 +167,7 @@ func (me *endPoint) validateFuncOutputsAreCorrect() {
 				panic("Two param func must have type int,<something> or <something>,error." + me.exec.name + "Found:" + me.exec.outParams[0] + "," + me.exec.outParams[1])
 			}
 		default:
-			panik.Do("Incorrect number of returns for Func: %s", me.exec.name)
+			panic(fmt.Sprintf("Incorrect number of returns for Func: %s", me.exec.name))
 		}
 	}
 }
@@ -264,7 +269,9 @@ func handleIncoming(e *endPoint) func(http.ResponseWriter, *http.Request) {
 
 		if e.config.Ttl != "" {
 			ttl, err = time.ParseDuration(e.config.Ttl)
-			panik.On(err)
+			if err != nil {
+				panic(err)
+			}
 		}
 		useCache = r.Method == "GET" && ttl > 0 && e.stash != nil
 

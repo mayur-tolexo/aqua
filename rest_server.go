@@ -9,7 +9,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rightjoin/aero/cache"
-	"github.com/rightjoin/aero/panik"
 	"github.com/rightjoin/aero/refl"
 	"github.com/rightjoin/aero/str"
 )
@@ -243,15 +242,19 @@ func (me *RestServer) loadServiceEndpoints(svc interface{}) {
 
 func (me *RestServer) addServiceToList(ep endPoint) {
 	if _, found := me.apis[ep.svcId]; found {
-		panik.Do("Multiple services found: %s", ep.svcId)
+		panic(fmt.Sprintf("Multiple services found: %s", ep.svcId))
 	} else {
 		me.apis[ep.svcId] = ep
 	}
 }
 
 func (me *RestServer) validateService(svc interface{}) {
-	panik.If(!refl.IsAddress(svc), "RestServer.AddService() expects address of your Service object")
-	panik.If(!refl.ComposedOf(svc, RestService{}), "RestServer.AddService() expects object that contains anonymous RestService field")
+	if !refl.IsAddress(svc) {
+		panic("RestServer.AddService() expects address of your Service object")
+	}
+	if !refl.ComposedOf(svc, RestService{}) {
+		panic("RestServer.AddService() expects object that contains anonymous RestService field")
+	}
 }
 
 func (me *RestServer) Run() {

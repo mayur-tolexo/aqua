@@ -7,14 +7,14 @@ import (
 	"os"
 	"strconv"
 	"time"
-
-	"github.com/rightjoin/aero/panik"
 )
 
 func ModAccessLog(path string) func(http.Handler) http.Handler {
 
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	panik.On(err)
+	if err != nil {
+		panic(err)
+	}
 	l := log.New(f, "", log.LstdFlags)
 
 	return func(next http.Handler) http.Handler {
@@ -29,7 +29,9 @@ func ModAccessLog(path string) func(http.Handler) http.Handler {
 func ModSlowLog(path string, msec int) func(http.Handler) http.Handler {
 
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	panik.On(err)
+	if err != nil {
+		panic(err)
+	}
 	l := log.New(f, "", log.LstdFlags)
 
 	return func(next http.Handler) http.Handler {
