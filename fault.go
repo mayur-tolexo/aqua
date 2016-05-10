@@ -6,16 +6,22 @@ import (
 )
 
 type Fault struct {
-	HttpCode int    `json:"-"`
+	HTTPCode int    `json:"-"`
 	Message  string `json:"message"`
+	Desc     string `json:"desc"`
 	Issue    error  `json:"issue"`
 }
 
 func (f Fault) MarshalJSON() ([]byte, error) {
 
-	b := fmt.Sprintf(`{"message":%s`, strconv.Quote(f.Message))
+	// TODO: use buffer, and not immutable strings
+
+	b := "{"
+
+	b += fmt.Sprintf(`"message":%s`, strconv.Quote(f.Message))
+	b += fmt.Sprintf(`,"desc": %s`, strconv.Quote(f.Desc))
 	if f.Issue != nil {
-		b += fmt.Sprintf(`, "issue": %s`, strconv.Quote(f.Issue.Error()))
+		b += fmt.Sprintf(`,"issue": %s`, strconv.Quote(f.Issue.Error()))
 	}
 	b += "}"
 
