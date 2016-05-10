@@ -59,8 +59,8 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 		if err != nil {
 			panic(err)
 		}
-		if f.HttpCode != 0 {
-			w.WriteHeader(f.HttpCode)
+		if f.HTTPCode != 0 {
+			w.WriteHeader(f.HTTPCode)
 		} else {
 			// 417: Expectation failed
 			switch r.Method {

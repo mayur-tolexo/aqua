@@ -424,7 +424,7 @@ func (s *TwoParams) GetString3() (string, error) {
 
 func (s *TwoParams) GetFault3() (string, error) {
 	return "", Fault{
-		HttpCode: 410,
+		HTTPCode: 410,
 		Message:  "there it is",
 		Issue:    errors.New("whatsup"),
 	}
