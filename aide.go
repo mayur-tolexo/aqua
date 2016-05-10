@@ -1,7 +1,6 @@
 package aqua
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -9,20 +8,19 @@ import (
 
 var separator string = ","
 
-// Aide allows access to 1/ the reqeust, and 2/ variables (post, get and body)
-// However, to load these variable values, LoadVars() method needs to be invoked
-// in prior.
+// Aide allows access to Request, Response and other vars (post, get, body)
 type Aide struct {
 	// request handle
 	Request  *http.Request
 	Response http.ResponseWriter
 
 	// variables
-	PostVars  map[string]string
-	QueryVars map[string]string
-	Body      string
+	PostVar  map[string]string
+	QueryVar map[string]string
+	Body     string
 }
 
+// NewAide creates a new Aide object
 func NewAide(w http.ResponseWriter, r *http.Request) Aide {
 	return Aide{
 		Request:  r,
@@ -30,13 +28,14 @@ func NewAide(w http.ResponseWriter, r *http.Request) Aide {
 	}
 }
 
+// LoadVars parses an intializes PostVars, GetVars and Body variables
 func (j *Aide) LoadVars() {
 
-	if j.PostVars != nil {
+	if j.PostVar != nil {
 		panic("Aide.LoadVars can be called only once per request")
 	} else {
-		j.PostVars = make(map[string]string)
-		j.QueryVars = make(map[string]string)
+		j.PostVar = make(map[string]string)
+		j.QueryVar = make(map[string]string)
 	}
 
 	if j.Request.Method == "POST" || j.Request.Method == "PUT" {
@@ -44,21 +43,21 @@ func (j *Aide) LoadVars() {
 		switch {
 		case ctype == "application/x-www-form-urlencoded":
 			j.Request.ParseForm()
-			j.loadPostVars(j.Request)
-			j.loadQueryVars(j.Request, true)
+			j.loadPostVar(j.Request)
+			j.loadQueryVar(j.Request, true)
 		case strings.HasPrefix(ctype, "multipart/form-data;"):
 			// ParseMultiPart form should ideally populate
 			// r.PostForm, but instead it fills r.Form
 			// https://github.com/golang/go/issues/9305
 			j.Request.ParseMultipartForm(1024 * 1024)
-			j.loadPostVars(j.Request)
-			j.loadQueryVars(j.Request, true)
+			j.loadPostVar(j.Request)
+			j.loadQueryVar(j.Request, true)
 		default:
 			j.Body = getBody(j.Request)
 		}
 	} else if j.Request.Method == "GET" {
 		j.Request.ParseForm()
-		j.loadQueryVars(j.Request, false)
+		j.loadQueryVar(j.Request, false)
 	}
 }
 
@@ -71,36 +70,22 @@ func getBody(r *http.Request) string {
 	return string(b)
 }
 
-func (j *Aide) loadPostVars(r *http.Request) {
-	for k, _ := range r.PostForm {
-		j.PostVars[k] = strings.Join(r.PostForm[k], separator)
+func (j *Aide) loadPostVar(r *http.Request) {
+	for k := range r.PostForm {
+		j.PostVar[k] = strings.Join(r.PostForm[k], separator)
 	}
 }
 
-func (j *Aide) loadQueryVars(r *http.Request, skipPostVars bool) {
-	for k, _ := range r.Form {
+func (j *Aide) loadQueryVar(r *http.Request, skipPostVars bool) {
+	for k := range r.Form {
 		if skipPostVars {
 			// only add to query-vars if it is NOT a post var
-			if _, found := j.PostVars[k]; !found {
-				j.QueryVars[k] = strings.Join(r.Form[k], separator)
+			if _, found := j.PostVar[k]; !found {
+				j.QueryVar[k] = strings.Join(r.Form[k], separator)
 			}
 		} else {
-			j.QueryVars[k] = strings.Join(r.Form[k], separator)
+			j.QueryVar[k] = strings.Join(r.Form[k], separator)
 		}
 	}
 
-}
-
-func (a *Aide) HasPostVars(vars ...string) (bool, error) {
-	if a.PostVars == nil {
-		panic("LoadVars() method not invoked")
-	}
-
-	for _, v := range vars {
-		if _, ok := a.PostVars[v]; !ok {
-			return false, fmt.Errorf("Expected post variable (%s) missing", v)
-		}
-	}
-
-	return true, nil
 }

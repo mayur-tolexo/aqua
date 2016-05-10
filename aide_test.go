@@ -15,11 +15,11 @@ type aideService struct {
 
 func (u *aideService) Echo(j Aide) string {
 	j.LoadVars()
-	return j.QueryVars["abc"]
+	return j.QueryVar["abc"]
 }
 
 func (u *aideService) Echo2(j Aide) string {
-	return j.QueryVars["def"]
+	return j.QueryVar["def"]
 }
 
 func TestJarForHttpGETMethod(t *testing.T) {
