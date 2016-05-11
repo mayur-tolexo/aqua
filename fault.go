@@ -28,6 +28,21 @@ func (f Fault) MarshalJSON() ([]byte, error) {
 	return []byte(b), nil
 }
 
+func (f *Fault) Set(err error, desc ...string) *Fault {
+	if err == nil {
+		return nil
+	}
+
+	f.Issue = err
+	if len(desc) > 0 {
+		f.Desc = desc[0]
+	}
+	if len(desc) > 1 {
+		f.Message = desc[1]
+	}
+	return f
+}
+
 // Fault implements error interface
 func (f Fault) Error() string {
 	return f.Issue.Error()
