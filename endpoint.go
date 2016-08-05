@@ -179,6 +179,7 @@ func (me *endPoint) isAcceptableType(dataType string) bool {
 	accepts["st:github.com/rightjoin/aqua.Sac"] = true
 	accepts["*st:github.com/rightjoin/aqua.Sac"] = true
 	accepts["i:."] = true
+	accepts["bool"] = true
 
 	_, found := accepts[dataType]
 	if found {

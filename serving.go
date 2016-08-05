@@ -103,12 +103,21 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
 		w.Write(j)
+	case sign == "bool":
+		i := 0
+		if val.Bool() == true {
+			i = 1
+		}
+		j, _ := ds.ToBytes(map[string]interface{}{"success": i}, pretty == "true" || pretty == "1")
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
+		w.Write(j)
 	case sign == "i:.":
 		writeItem(w, r, refl.ObjSignature(val.Interface()), val, pretty)
 		// fmt.Println("interface{} resolves to:", getSignOfObject(val.Interface()))
 		//TODO: error handling in case the returned object is an error
 		//TODO: along with int, xx, also support xx, error as a function
 	default:
-		fmt.Printf("Don't know how to return a: %s?\n", sign)
+		fmt.Printf("Don't know how to  %s?\n", sign)
 	}
 }
