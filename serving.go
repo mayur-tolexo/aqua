@@ -79,15 +79,20 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
 		w.Write(j)
-	case isError(val.Interface()):
-		f, ok := val.Interface().(Fault)
-		if !ok {
-			f = Fault{
-				Message: "Oops! An error occurred",
-				Issue:   val.Interface().(error),
+	case isError(val.Interface()) || sign == "i:.error":
+		if val.IsNil() {
+			m := map[string]interface{}{"success": 1}
+			writeItem(w, r, refl.ObjSignature(m), reflect.ValueOf(m), pretty)
+		} else {
+			f, ok := val.Interface().(Fault)
+			if !ok {
+				f = Fault{
+					Message: "Oops! An error occurred",
+					Issue:   val.Interface().(error),
+				}
 			}
+			writeItem(w, r, refl.ObjSignature(f), reflect.ValueOf(f), pretty)
 		}
-		writeItem(w, r, refl.ObjSignature(f), reflect.ValueOf(f), pretty)
 	case sign == "map":
 		j, _ := ds.ToBytes(val.Interface(), pretty == "true" || pretty == "1")
 		w.Header().Set("Content-Type", "application/json")
@@ -103,20 +108,21 @@ func writeItem(w http.ResponseWriter, r *http.Request, sign string, val reflect.
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
 		w.Write(j)
-	case sign == "bool":
-		i := 0
-		if val.Bool() == true {
-			i = 1
-		}
-		j, _ := ds.ToBytes(map[string]interface{}{"success": i}, pretty == "true" || pretty == "1")
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Content-Length", strconv.Itoa(len(j)))
-		w.Write(j)
 	case sign == "i:.":
 		writeItem(w, r, refl.ObjSignature(val.Interface()), val, pretty)
 		// fmt.Println("interface{} resolves to:", getSignOfObject(val.Interface()))
 		//TODO: error handling in case the returned object is an error
 		//TODO: along with int, xx, also support xx, error as a function
+
+	// case sign == "bool":
+	// 	i := 0
+	// 	if val.Bool() == true {
+	// 		i = 1
+	// 	}
+	// 	j, _ := ds.ToBytes(map[string]interface{}{"success": i}, pretty == "true" || pretty == "1")
+	// 	w.Header().Set("Content-Type", "application/json")
+	// 	w.Header().Set("Content-Length", strconv.Itoa(len(j)))
+	// 	w.Write(j)
 	default:
 		fmt.Printf("Don't know how to  %s?\n", sign)
 	}

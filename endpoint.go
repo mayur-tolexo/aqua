@@ -151,7 +151,7 @@ func (me *endPoint) validateFuncOutputsAreCorrect() {
 	} else if !me.stdHandler {
 		switch me.exec.outCount {
 		case 1:
-			if !me.isAcceptableType(me.exec.outParams[0]) {
+			if !me.isAcceptableType(me.exec.outParams[0]) && me.exec.outParams[0] != "i:.error" {
 				panic("Incorrect return type found in: " + me.exec.name + " - " + me.exec.outParams[0])
 			}
 		case 2:
@@ -179,7 +179,6 @@ func (me *endPoint) isAcceptableType(dataType string) bool {
 	accepts["st:github.com/rightjoin/aqua.Sac"] = true
 	accepts["*st:github.com/rightjoin/aqua.Sac"] = true
 	accepts["i:."] = true
-	accepts["bool"] = true
 
 	_, found := accepts[dataType]
 	if found {
