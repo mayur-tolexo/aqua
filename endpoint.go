@@ -12,6 +12,12 @@ import (
 	"github.com/rightjoin/aero/cache"
 )
 
+var currentRepo string
+
+func init() {
+	currentRepo = reflect.TypeOf(NewAide(nil, nil)).PkgPath()
+}
+
 type endPoint struct {
 	exec       Invoker
 	config     Fixture
@@ -98,11 +104,11 @@ func (me *endPoint) signatureMatchesDefaultHttpHandler() bool {
 func (me *endPoint) needsAideInput() bool {
 	// aide the last parameter?
 	for i := 0; i < len(me.exec.inpParams)-1; i++ {
-		if me.exec.inpParams[i] == "st:github.com/rightjoin/aqua.Aide" {
+		if me.exec.inpParams[i] == "st:"+currentRepo+".Aide" {
 			panic("Aide parameter should be the last one: " + me.exec.name)
 		}
 	}
-	return me.exec.inpCount > 0 && me.exec.inpParams[me.exec.inpCount-1] == "st:github.com/rightjoin/aqua.Aide"
+	return me.exec.inpCount > 0 && me.exec.inpParams[me.exec.inpCount-1] == "st:"+currentRepo+".Aide"
 }
 
 func (me *endPoint) validateMuxVarsMatchFuncInputs() {
@@ -128,7 +134,7 @@ func (me *endPoint) validateFuncInputsAreOfRightType() {
 	if !me.stdHandler {
 		for _, s := range me.exec.inpParams {
 			switch s {
-			case "st:github.com/rightjoin/aqua.Aide":
+			case "st:" + currentRepo + ".Aide":
 			case "int":
 			case "uint":
 			case "string":
@@ -145,7 +151,7 @@ func (me *endPoint) validateFuncOutputsAreCorrect() {
 		if me.exec.outCount != 1 {
 			panic("CrudApi must return 1 param only")
 		}
-		if me.exec.outParams[0] != "st:github.com/rightjoin/aqua.CRUD" {
+		if me.exec.outParams[0] != "st:"+currentRepo+".CRUD" {
 			panic("CRUD return must be of type CRUD")
 		}
 	} else if !me.stdHandler {
@@ -176,8 +182,8 @@ func (me *endPoint) isAcceptableType(dataType string) bool {
 	var accepts = make(map[string]bool)
 	accepts["string"] = true
 	accepts["map"] = true
-	accepts["st:github.com/rightjoin/aqua.Sac"] = true
-	accepts["*st:github.com/rightjoin/aqua.Sac"] = true
+	accepts["st:"+currentRepo+".Sac"] = true
+	accepts["*st:"+currentRepo+".Sac"] = true
 	accepts["i:."] = true
 
 	_, found := accepts[dataType]
@@ -196,7 +202,7 @@ func (me *endPoint) isAcceptableType(dataType string) bool {
 func (me *endPoint) setupMuxHandlers(mux *mux.Router) (svcUrl string) {
 
 	m := interpose.New()
-	for i, _ := range me.modules {
+	for i := range me.modules {
 		m.Use(me.modules[i])
 		//fmt.Println("using module:", me.modules[i], reflect.TypeOf(me.modules[i]))
 	}
