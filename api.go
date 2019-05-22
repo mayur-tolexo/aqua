@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rightjoin/aero/db/cstr"
-	"github.com/rightjoin/aero/db/orm"
-	"github.com/rightjoin/aero/ds"
-	"github.com/rightjoin/aero/engine"
-	"github.com/rightjoin/aero/refl"
+	"github.com/mayur-tolexo/aero/db/cstr"
+	"github.com/mayur-tolexo/aero/db/orm"
+	"github.com/mayur-tolexo/aero/ds"
+	"github.com/mayur-tolexo/aero/engine"
+	"github.com/mayur-tolexo/aero/refl"
 )
 
 type Api struct{ Fixture }

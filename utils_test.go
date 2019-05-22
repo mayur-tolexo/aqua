@@ -3,7 +3,7 @@ package aqua
 import (
 	"testing"
 
-	"github.com/rightjoin/aero/str"
+	"github.com/mayur-tolexo/aero/str"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

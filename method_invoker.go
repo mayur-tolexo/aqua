@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/rightjoin/aero/db/orm"
-	"github.com/rightjoin/aero/refl"
+	"github.com/mayur-tolexo/aero/db/orm"
+	"github.com/mayur-tolexo/aero/refl"
 )
 
 // Responsibility:

@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rightjoin/aero/ds"
-	"github.com/rightjoin/aero/refl"
+	"github.com/mayur-tolexo/aero/ds"
+	"github.com/mayur-tolexo/aero/refl"
 )
 
 func writeOutput(w http.ResponseWriter, r *http.Request, signs []string, vals []reflect.Value, pretty string) {

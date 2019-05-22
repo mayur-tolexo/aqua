@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/rightjoin/aero/cache"
-	"github.com/rightjoin/aero/refl"
-	"github.com/rightjoin/aero/str"
+	"github.com/mayur-tolexo/aero/cache"
+	"github.com/mayur-tolexo/aero/refl"
+	"github.com/mayur-tolexo/aero/str"
 )
 
 type Authorizer interface {

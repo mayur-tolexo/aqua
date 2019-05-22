@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/rightjoin/aero/refl"
+	"github.com/mayur-tolexo/aero/refl"
 )
 
 // var logEnc = log.New("enc")
@@ -20,7 +20,7 @@ func encode(r []reflect.Value, typ []string) []byte {
 	buf := new(bytes.Buffer)
 	encd := json.NewEncoder(buf)
 
-	for i, _ := range r {
+	for i := range r {
 		encodeItem(encd, r[i], typ[i])
 	}
 
@@ -81,7 +81,7 @@ func decode(data []byte, typ []string) []reflect.Value {
 	buf := bytes.NewBuffer(data)
 	decd := json.NewDecoder(buf)
 	r := make([]reflect.Value, len(typ))
-	for i, _ := range typ {
+	for i := range typ {
 		r[i] = decodeItem(decd, typ[i])
 	}
 	return r

@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/rightjoin/aero/db/cstr"
-	"github.com/rightjoin/aero/ds"
+	"github.com/mayur-tolexo/aero/db/cstr"
+	"github.com/mayur-tolexo/aero/ds"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -386,7 +386,7 @@ func (s *TwoParams) GetMap() (int, map[string]interface{}) {
 
 func (s *TwoParams) GetSlice() (int, []Fixture) {
 	return 200, []Fixture{
-		Fixture{},
+		{},
 	}
 }
 
@@ -410,7 +410,7 @@ func (s *TwoParams) GetMap2() (map[string]interface{}, error) {
 
 func (s *TwoParams) GetSlice2() ([]Fixture, error) {
 	return []Fixture{
-		Fixture{Allow: "+"}, Fixture{Deny: "-"},
+		{Allow: "+"}, {Deny: "-"},
 	}, nil
 }
 
